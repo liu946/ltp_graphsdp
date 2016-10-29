@@ -46,6 +46,8 @@ void multithreaded_ltp( void * args) {
       engine->ner(xml4nlp);
     } else if(type == LTP_SERVICE_NAME_DEPPARSE) {
       engine->parser(xml4nlp);
+    } else if(type == LTP_SERVICE_NAME_SEMDEPPARSE) {
+      engine->semantic_parser(xml4nlp);
     } else if(type == LTP_SERVICE_NAME_SRL) {
       engine->srl(xml4nlp);
     } else {
@@ -78,6 +80,7 @@ int main(int argc, char *argv[]) {
      "- " LTP_SERVICE_NAME_NER ": Named entity recognization\n"
      "- " LTP_SERVICE_NAME_DEPPARSE ": Dependency parsing\n"
      "- " LTP_SERVICE_NAME_SRL ": Semantic role labeling (equals to all)\n"
+     "- " LTP_SERVICE_NAME_SEMDEPPARSE ": Semantic dependency parsing\n"
      "- all: The whole pipeline [default]")
     ("input", value<std::string>(), "The path to the input file.")
     ("segmentor-model", value<std::string>(),
@@ -135,7 +138,8 @@ int main(int argc, char *argv[]) {
         && last_stage != LTP_SERVICE_NAME_NER
         && last_stage != LTP_SERVICE_NAME_DEPPARSE
         && last_stage != LTP_SERVICE_NAME_SRL
-        && last_stage != "all") {
+        && last_stage != "all"
+	&& last_stage != LTP_SERVICE_NAME_SEMDEPPARSE) {
       std::cerr << "Unknown stage name:" << last_stage << ", reset to 'all'" << std::endl;
       last_stage = "all";
     }
@@ -181,18 +185,20 @@ int main(int argc, char *argv[]) {
   }
   std::string semparser_training = "ltp_data/semparser.training.oracle";
   if (vm.count("semparser-training")) {
-    semparser_model= vm["semparser-training"].as<std::string>();
+    semparser_training= vm["semparser-training"].as<std::string>();
   }
   std::string semparser_embedding = "ltp_data/semparser.embedding";
   if (vm.count("semparser-embedding")) {
-    semparser_model= vm["semparser-embedding"].as<std::string>();
+    semparser_embedding= vm["semparser-embedding"].as<std::string>();
   }
 
   std::string srl_data= "ltp_data/srl/";
   if (vm.count("srl-data")) {
     srl_data = vm["srl-data"].as<std::string>();
   }
-
+  
+  std::cerr << "in ltp_test.cpp model: " << semparser_model << " train: " << semparser_training 
+  << " embedding: " << semparser_embedding << std::endl;
   LTP engine(last_stage, segmentor_model, segmentor_lexicon, postagger_model,
       postagger_lexcion, ner_model, parser_model, semparser_model, srl_data,
       semparser_training, semparser_embedding);

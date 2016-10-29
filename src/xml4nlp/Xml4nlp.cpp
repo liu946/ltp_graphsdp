@@ -870,12 +870,12 @@ int XML4NLP::SetSemanticParsesToSentence(const std::vector<std::vector<std::stri
               << pid << std::endl;
       return -1;
     }
-
+    int head_num = 0;
     for (int idx = 0; idx < vecSemResult.size() + 1; ++ idx) {
       if (vecSemResult[i][idx] != "-NULL-"){
         TiXmlElement *semPtr = new TiXmlElement(TAG_SEM);
-        semPtr->SetAttribute(TAG_ID, i);
-        semPtr->SetAttribute(TAG_SEMPSR_PARENT, idx + 1);
+        semPtr->SetAttribute(TAG_ID, head_num ++);
+        semPtr->SetAttribute(TAG_SEMPSR_PARENT, idx);
         semPtr->SetAttribute(TAG_SEMPSR_RELATE, vecSemResult[i][idx].c_str());
         wordPtr->LinkEndChild(semPtr);
       }

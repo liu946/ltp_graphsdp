@@ -56,8 +56,8 @@ public:
   const std::string& parser_model_file,
   const std::string& semantic_parser_model_file,
   const std::string& srl_model_dir,
-  const std::string& semantic_parser_training_file = "",
-  const std::string& semantic_parser_embedding_file = "");
+  const std::string& semantic_parser_training_file ,
+  const std::string& semantic_parser_embedding_file);
 
   ~LTP();  //! The deallocator
   bool loaded() const;  //! return true on the resource successful loaded, otherwise false
@@ -139,8 +139,8 @@ private:
        const std::string& parser_model_file,
 	     const std::string& semantic_parser_model_file,
        const std::string& srl_model_dir,
-       const std::string& semantic_parser_training_file = "",
-       const std::string& semantic_parser_embedding_file = "");
+       const std::string& semantic_parser_training_file,
+       const std::string& semantic_parser_embedding_file);
 
 private:
   LTPResource _resource;    /*< the ltp resources */

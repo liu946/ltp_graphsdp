@@ -104,6 +104,7 @@ bool LSTMParser::load(string model_file, string training_data_file, string word_
     cerr << "loading dev data from " << dev_data_file << endl;
     corpus.load_correct_actionsDev(dev_data_file);
   }
+  return true;
 }
 
 void LSTMParser::get_dynamic_infos(){

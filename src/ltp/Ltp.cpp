@@ -43,7 +43,9 @@ LTP::LTP(const std::string& last_stage,
       ner_model_file,
       parser_model_file,
 	    semantic_parser_model_file,
-      srl_model_dir);
+      srl_model_dir,
+      semantic_parser_training_file,
+      semantic_parser_embedding_file);
 }
 
 bool LTP::load(const std::string& last_stage,
@@ -122,8 +124,7 @@ bool LTP::load(const std::string& last_stage,
   }
    
   if (target_mask & kActiveSemanticParser) {
-    if (0 != _resource.LoadSemanticParserResource(semantic_parser_model_file, semantic_parser_training_file,
-                                                    semantic_parser_embedding_file)) {
+    if (0 != _resource.LoadSemanticParserResource(semantic_parser_model_file, semantic_parser_training_file, semantic_parser_embedding_file)) {
       ERROR_LOG("in LTP::semantic_parser, failed to load semantic parser resource");
       return false;
     }
