@@ -875,8 +875,11 @@ int XML4NLP::SetSemanticParsesToSentence(const std::vector<std::vector<std::stri
       if (vecSemResult[i][idx] != "-NULL-"){
         TiXmlElement *semPtr = new TiXmlElement(TAG_SEM);
         semPtr->SetAttribute(TAG_ID, head_num ++);
-        semPtr->SetAttribute(TAG_SEMPSR_PARENT, idx);
-        semPtr->SetAttribute(TAG_SEMPSR_RELATE, vecSemResult[i][idx].c_str());
+	if (vecSemResult[i][idx] == "Root")
+	  semPtr->SetAttribute(TAG_PSR_PARENT, -1);
+	else
+          semPtr->SetAttribute(TAG_PSR_PARENT, idx);
+        semPtr->SetAttribute(TAG_PSR_RELATE, vecSemResult[i][idx].c_str());
         wordPtr->LinkEndChild(semPtr);
       }
     }

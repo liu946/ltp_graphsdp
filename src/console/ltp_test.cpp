@@ -29,7 +29,6 @@ void multithreaded_ltp( void * args) {
 
   while (true) {
     int ret = dispatcher->next(sentence);
-    std::cerr << sentence << endl;
     if (ret < 0)
       break;
 
