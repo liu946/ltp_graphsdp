@@ -13,6 +13,8 @@
 #include "utils/codecs.hpp"
 #include "utils/logging.hpp"
 
+#include "lstmsdparser/lstm_sdparser_dll.h"
+
 #if _WIN32
 #pragma warning(disable: 4786 4284)
 #pragma comment(lib, "segmentor.lib")
@@ -31,7 +33,9 @@ LTP::LTP(const std::string& last_stage,
     const std::string& ner_model_file,
     const std::string& parser_model_file,
 	  const std::string& semantic_parser_model_file,
-    const std::string& srl_model_dir)
+    const std::string& srl_model_dir,
+    const std::string& semantic_parser_training_file,
+    const std::string& semantic_parser_embedding_file)
   : _resource(), _loaded(false) {
   _loaded = load(last_stage,
       segmentor_model_file, segmentor_lexicon_file,
@@ -50,7 +54,9 @@ bool LTP::load(const std::string& last_stage,
     const std::string& ner_model_file,
     const std::string& parser_model_file,
 	  const std::string& semantic_parser_model_file,
-    const std::string& srl_model_dir) {
+    const std::string& srl_model_dir,
+    const std::string& semantic_parser_training_file,
+    const std::string& semantic_parser_embedding_file) {
 
   size_t target_mask = 0;
   if (last_stage == LTP_SERVICE_NAME_SEGMENT) {
@@ -116,7 +122,8 @@ bool LTP::load(const std::string& last_stage,
   }
    
   if (target_mask & kActiveSemanticParser) {
-    if (0 != _resource.LoadSemanticParserResource(semantic_parser_model_file)) {
+    if (0 != _resource.LoadSemanticParserResource(semantic_parser_model_file, semantic_parser_training_file,
+                                                    semantic_parser_embedding_file)) {
       ERROR_LOG("in LTP::semantic_parser, failed to load semantic parser resource");
       return false;
     }
@@ -447,6 +454,8 @@ int LTP::semantic_parser(XML4NLP & xml) {
     std::vector<int>          vecHead;
     std::vector<std::string>  vecRel;
 
+    std::vector<std::vector<std::string>> vecSemResult;
+
     if (xml.GetWordsFromSentence(vecWord, i) != 0) {
       ERROR_LOG("in LTP::semantic_parser, failed to get words from xml");
       return kReadXmlError;
@@ -467,12 +476,12 @@ int LTP::semantic_parser(XML4NLP & xml) {
       return kSentenceTooLongError;
     }
 
-    if (-1 == parser_parse(semparser, vecWord, vecPOS, vecHead, vecRel)) {
+    if (-1 == lstmsdparser_parse(semparser, vecWord, vecPOS, vecSemResult)) {
       ERROR_LOG("in LTP::semantic_parser, failed to perform semantic parse on sent. #%d", i+1);
       return kParserError;
     }
 
-    if (0 != xml.SetSemanticParsesToSentence(vecHead, vecRel, i)) {
+    if (0 != xml.SetSemanticParsesToSentence(vecSemResult, i)) {
       ERROR_LOG("in LTP::sematnic_parser, failed to write semantic parse result to xml");
       return kWriteXmlError;
     }

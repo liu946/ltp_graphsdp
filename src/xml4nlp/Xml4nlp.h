@@ -628,6 +628,8 @@ public:
       int sentenceIdx);
 	  
   // for Semantic Parser
+  /*
+  //not used
   int GetSemanticParsesFromSentence(vector< pair<int, const char *> > &vecParse,
       int paragraphIdx,
       int sentenceIdx) const;
@@ -640,15 +642,26 @@ public:
       int sentenceIdx) const;
 
   int GetSemanticParsesFromSentence(vector< pair<int, string> > &vecParse,
-      int sentenceIdx) const;
+      int sentenceIdx) const;*/
 
+/*
+  //not used
   int SetSemanticParsesToSentence(const vector< pair<int, string> > &vecParse,
       int paragraphIdx,
       int sentenceIdx);
 
   int SetSemanticParsesToSentence(const vector< pair<int, string> > &vecParse,
       int sentenceIdx);
+*/
+  // for lstm parser
+  int SetSemanticParsesToSentence(const std::vector<std::vector<std::string>> & vecSemResult,
+      int paragraphIdx,
+      int sentenceIdx);
 
+  int SetSemanticParsesToSentence(const std::vector<std::vector<std::string>> & vecSemResult,
+      int sentenceIdx);
+
+  //legacy
   int SetSemanticParsesToSentence(const vector<int> &vecHead,
       const vector<string> &vecRel,
       int paragraphIdx,
@@ -892,6 +905,8 @@ private:
   static const char * const TAG_BEGIN;  // cr, srl
   static const char * const TAG_END;    // cr, srl
   static const char * const TAG_ID;   // para, sent, word
+
+  static const char * const TAG_SEM; // for lstm semantic dependency parser
 };
 
 #endif    //  end for __LTP_XML4NLP_H__

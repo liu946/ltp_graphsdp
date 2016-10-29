@@ -7,6 +7,15 @@ include_directories (./
 
 set (ltp_test_SRC ltp_test.cpp ${THIRDPARTY_DIR}/tinythreadpp/tinythread.cpp)
 
+# look for Boost
+if(DEFINED ENV{BOOST_ROOT})
+  set(Boost_NO_SYSTEM_PATHS ON)
+endif()
+set(Boost_REALPATH ON)
+find_package(Boost COMPONENTS program_options serialization REQUIRED)
+include_directories(${Boost_INCLUDE_DIR})
+set(LIBS ${LIBS} ${Boost_LIBRARIES})
+
 link_directories ( ${LIBRARY_OUTPUT_PATH} )
 add_executable (ltp_test ${ltp_test_SRC})
 target_link_libraries (ltp_test
@@ -16,11 +25,14 @@ target_link_libraries (ltp_test
     segmentor_static_lib
     postagger_static_lib
     parser_static_lib
+    lstm_sdparser_static_lib
     ner_static_lib
     srl_static_lib
     xml4nlp
     boost_regex_static_lib
-    boost_program_options_static_lib)
+    boost_program_options_static_lib
+    ${Boost_LIBRARIES}
+    cnn)
 
 add_executable (cws_cmdline cws_cmdline.cpp
     ${THIRDPARTY_DIR}/tinythreadpp/tinythread.cpp)

@@ -29,6 +29,7 @@ void multithreaded_ltp( void * args) {
 
   while (true) {
     int ret = dispatcher->next(sentence);
+    std::cerr << sentence << endl;
     if (ret < 0)
       break;
 
@@ -91,6 +92,14 @@ int main(int argc, char *argv[]) {
      "The path to the NER model [default=ltp_data/ner.model].")
     ("parser-model", value<std::string>(),
      "The path to the parser model [default=ltp_data/parser.model].")
+
+    ("semparser-model", value<std::string>(),
+     "The path to the semantic parser model [default=ltp_data/semparser.model].")
+    ("semparser-training", value<std::string>(),
+     "The path to the semantic parser traning file [default=ltp_data/semparser.training.oracle].")
+    ("semparser-embedding", value<std::string>(),
+     "The path to the semantic parser embedding file [default=ltp_data/semparser.embedding].")
+
     ("srl-data", value<std::string>(),
      "The path to the SRL model directory [default=ltp_data/srl_data/].")
     ("debug-level", value<int>(), "The debug level.")
@@ -164,9 +173,19 @@ int main(int argc, char *argv[]) {
   if (vm.count("parser-model")) {
     parser_model= vm["parser-model"].as<std::string>();
   }
+
+
   std::string semparser_model = "ltp_data/semparser.model";
   if (vm.count("semparser-model")) {
     semparser_model= vm["semparser-model"].as<std::string>();
+  }
+  std::string semparser_training = "ltp_data/semparser.training.oracle";
+  if (vm.count("semparser-training")) {
+    semparser_model= vm["semparser-training"].as<std::string>();
+  }
+  std::string semparser_embedding = "ltp_data/semparser.embedding";
+  if (vm.count("semparser-embedding")) {
+    semparser_model= vm["semparser-embedding"].as<std::string>();
   }
 
   std::string srl_data= "ltp_data/srl/";
@@ -175,7 +194,8 @@ int main(int argc, char *argv[]) {
   }
 
   LTP engine(last_stage, segmentor_model, segmentor_lexicon, postagger_model,
-      postagger_lexcion, ner_model, parser_model, semparser_model, srl_data);
+      postagger_lexcion, ner_model, parser_model, semparser_model, srl_data,
+      semparser_training, semparser_embedding);
 
   if (!engine.loaded()) {
     std::cerr << "Failed to load LTP" << std::endl;

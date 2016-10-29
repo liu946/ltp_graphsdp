@@ -8,6 +8,8 @@
 #include "srl/SRL_DLL.h"
 #include "utils/logging.hpp"
 
+#include "lstmsdparser/lstm_sdparser_dll.h"
+
 #if _WIN32
 #pragma warning(disable: 4786 4284)
 #pragma comment(lib, "segmentor.lib")
@@ -235,14 +237,15 @@ void * LTPResource::GetParser() {
 /* ====================================================== *
  * Semantic parser related resource                                *
  * ====================================================== */
-int LTPResource::LoadSemanticParserResource(const char * model_file) {
+int LTPResource::LoadSemanticParserResource(const char* model_file, const char* training_file,
+                                              const char* embedding_file) {
   if (m_isSemanticParserResourceLoaded) {
     return 0;
   }
 
   INFO_LOG("Loading semantic parser resource from \"%s\"", model_file);
 
-  m_semanticparser = parser_create_parser(model_file);
+  m_semanticparser = lstmsdparser_create_parser(model_file, training_file, embedding_file);
   if (!m_semanticparser) {
     ERROR_LOG("Failed to create semantic parser");
     return -1;
@@ -254,8 +257,9 @@ int LTPResource::LoadSemanticParserResource(const char * model_file) {
   return 0;
 }
 
-int LTPResource::LoadSemanticParserResource(const std::string & model_file) {
-  return LoadSemanticParserResource(model_file.c_str());
+int LTPResource::LoadSemanticParserResource(const std::string& model_file, const std::string& training_file,
+                                              const std::string& embedding_file) {
+  return LoadSemanticParserResource(model_file.c_str(), training_file.c_str(), embedding_file.c_str());
 }
 
 void LTPResource::ReleaseSemanticParserResource() {
@@ -263,7 +267,7 @@ void LTPResource::ReleaseSemanticParserResource() {
     return;
   }
 
-  parser_release_parser(m_semanticparser);
+  lstmsdparser_release_parser(m_semanticparser);
   INFO_LOG("Semantic parser is released");
 
   m_semanticparser = NULL;

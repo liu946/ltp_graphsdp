@@ -9,6 +9,7 @@ set (ner_DIR            ${SOURCE_DIR}/ner/)
 set (srl_DIR            ${SOURCE_DIR}/srl/)
 set (ltp_DIR            ${SOURCE_DIR}/ltp/)
 set (server_DIR         ${SOURCE_DIR}/server/)
+set (lstm_sdparser_DIR       ${SOURCE_DIR}/lstmsdparser)
 
 add_subdirectory ("xml4nlp")
 add_subdirectory ("splitsnt")
@@ -21,9 +22,11 @@ add_subdirectory ("srl")
 add_subdirectory ("ltp")
 add_subdirectory ("console")
 
+add_subdirectory ("lstmsdparser")
+
 # mongoose server is not supported in windows
 if (UNIX)
-    add_subdirectory ("unittest")
+    #add_subdirectory ("unittest")
     add_subdirectory ("server")
 endif()
 

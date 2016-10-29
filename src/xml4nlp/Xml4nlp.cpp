@@ -41,8 +41,7 @@ const char * const XML4NLP::TAG_POS         = "pos";
 const char * const XML4NLP::TAG_NE          = "ne";
 const char * const XML4NLP::TAG_PSR_PARENT  = "parent";
 const char * const XML4NLP::TAG_PSR_RELATE  = "relate";
-const char * const XML4NLP::TAG_SEMPSR_PARENT  = "semparent";
-const char * const XML4NLP::TAG_SEMPSR_RELATE  = "semrelate";
+
 const char * const XML4NLP::TAG_WSD         = "wsd";
 const char * const XML4NLP::TAG_WSD_EXP     = "wsdexp";
 const char * const XML4NLP::TAG_SRL_ARG     = "arg";
@@ -50,6 +49,11 @@ const char * const XML4NLP::TAG_SRL_TYPE    = "type";
 const char * const XML4NLP::TAG_BEGIN       = "beg";
 const char * const XML4NLP::TAG_END         = "end";
 const char * const XML4NLP::TAG_ID          = "id";
+
+//for semantic dependency graph demo
+const char * const XML4NLP::TAG_SEM  = "sem";
+const char * const XML4NLP::TAG_SEMPSR_PARENT  = "semparent";
+const char * const XML4NLP::TAG_SEMPSR_RELATE  = "semrelate";
 
 XML4NLP::XML4NLP() {
   document.documentPtr = NULL;
@@ -701,6 +705,7 @@ int XML4NLP::SetParsesToSentence(const std::vector<int> & heads,
   return 0;
 }
 
+/*
 int XML4NLP::GetSemanticParsesFromSentence(std::vector< SemanticParseResult > &relation,
                                    int pid, int sid) const {
   std::vector<const char *> heads;
@@ -784,7 +789,8 @@ int XML4NLP::GetSemanticParsesFromSentence(std::vector< std::pair<int, std::stri
 
   return 0;
 }
-
+*/
+/*
 int XML4NLP::SetSemanticParsesToSentence(const std::vector< std::pair<int, std::string> > & relation,
                                  int pid, int sid) {
   if (0 != CheckRange(pid, sid)) return -1;
@@ -833,7 +839,59 @@ int XML4NLP::SetSemanticParsesToSentence(const std::vector< std::pair<int, std::
   if (0 != DecodeGlobalId(global_sid, pid, sid)) return -1;
   return SetSemanticParsesToSentence(relation, pid, sid);
 }
+*/
 
+// for lstm parser
+int XML4NLP::SetSemanticParsesToSentence(const std::vector<std::vector<std::string>> & vecSemResult,
+                                 int pid, int sid) {
+  if (0 != CheckRange(pid, sid)) return -1;
+
+  std::vector<Word> & words = document.paragraphs[pid].sentences[sid].words;
+
+  if (words.size() != vecSemResult.size()) {
+    std::cerr << "word number does not equal to vecInfo's size in paragraph"
+              << pid
+              << " sentence "
+              << sid << std::endl;
+    return -1;
+  }
+
+  TiXmlElement *wordPtr;
+  for (int i = 0; i < words.size(); ++ i) {
+    wordPtr = words[i].wordPtr;
+    if (wordPtr->FirstChildElement(TAG_SEM) != NULL) {
+      std::cerr << "\""
+              << TAG_SEM
+              << "\" already exists in word "
+              << i
+              << " of sentence "
+              << sid
+              << " of paragraph "
+              << pid << std::endl;
+      return -1;
+    }
+
+    for (int idx = 0; idx < vecSemResult.size() + 1; ++ idx) {
+      if (vecSemResult[i][idx] != "-NULL-"){
+        TiXmlElement *semPtr = new TiXmlElement(TAG_SEM);
+        semPtr->SetAttribute(TAG_ID, i);
+        semPtr->SetAttribute(TAG_SEMPSR_PARENT, idx + 1);
+        semPtr->SetAttribute(TAG_SEMPSR_RELATE, vecSemResult[i][idx].c_str());
+        wordPtr->LinkEndChild(semPtr);
+      }
+    }
+  }
+  return 0;
+}
+
+int XML4NLP::SetSemanticParsesToSentence(const std::vector<std::vector<std::string>> & vecSemResult,
+                                 int global_sid) {
+  int pid, sid;
+  if (0 != DecodeGlobalId(global_sid, pid, sid)) return -1;
+  return SetSemanticParsesToSentence(vecSemResult, pid, sid);
+}
+
+// legacy
 int XML4NLP::SetSemanticParsesToSentence(const std::vector<int> & heads,
                                  const std::vector<std::string> & deprels,
                                  int pid,
