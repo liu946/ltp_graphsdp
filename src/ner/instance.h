@@ -66,7 +66,7 @@ public:
     return ret;
   }
 
-  size_t num_recalled_entites() const {
+  size_t num_recalled_entities() const {
     size_t len = 0;
     size_t ret = 0;
     size_t gold_len = 0, predict_len = 0;
@@ -74,7 +74,7 @@ public:
     for (size_t i = 0; i < entities.size(); ++ i) { len += entities[i].size(); }
 
     for (size_t i = 0, j = 0; i < entities.size() && j < predict_entities.size(); ) {
-      if ((entities[i] == predict_entities[j]) && 
+      if ((entities[i] == predict_entities[j]) &&
           (entities_tags[i] == predict_entities_tags[j])) {
         if (entities_tags[i] != OTHER) {
           ++ ret;
@@ -121,6 +121,11 @@ public:
   std::vector< std::string >  entities_tags;
   std::vector< std::string >  predict_entities;
   std::vector< std::string >  predict_entities_tags;
+
+  double                      sequence_probability;
+  std::vector< double >       point_probabilities;
+  std::vector< double >       partial_probabilities;
+  std::vector< int >          partial_idx;
 };
 
 }     //  end for namespace ner

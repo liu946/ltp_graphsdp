@@ -50,16 +50,22 @@ NamedEntityRecognizerFrontend::NamedEntityRecognizerFrontend(
 NamedEntityRecognizerFrontend::NamedEntityRecognizerFrontend(
     const std::string& input_file,
     const std::string& model_file,
-    bool evaluate)
+    bool evaluate,
+    bool sequence_prob,
+    bool marginal_prob)
   : Frontend(kTest) {
   test_opt.test_file = input_file;
   test_opt.model_file = model_file;
   test_opt.evaluate = evaluate;
+  test_opt.sequence_prob = sequence_prob;
+  test_opt.marginal_prob = marginal_prob;
 
   INFO_LOG("||| ltp ner, testing ...");
   INFO_LOG("report: input file = %s", test_opt.test_file.c_str());
   INFO_LOG("report: model file = %s", test_opt.model_file.c_str());
   INFO_LOG("report: evaluate = %s", (test_opt.evaluate? "true": "false"));
+  INFO_LOG("report: sequence probability = %s", (test_opt.sequence_prob? "true": "false"));
+  INFO_LOG("report: marginal probability = %s", (test_opt.marginal_prob? "true":"false"));
 }
 
 NamedEntityRecognizerFrontend::NamedEntityRecognizerFrontend(
@@ -73,7 +79,7 @@ NamedEntityRecognizerFrontend::NamedEntityRecognizerFrontend(
 
 NamedEntityRecognizerFrontend::~NamedEntityRecognizerFrontend() {
   if (glob_con) { delete glob_con;  glob_con = 0; }
-  
+
   for (size_t i = 0; i < train_dat.size(); ++ i) {
     if (train_dat[i]) { delete train_dat[i];  train_dat[i] = 0; }
   }
@@ -109,7 +115,7 @@ void NamedEntityRecognizerFrontend::build_configuration(void) {
         }
       } else {
         std::string position = tag.substr(0, found);
-        std::string ne_type = tag.substr(found+ 1);
+        std::string ne_type = tag.substr(found+1);
         if (position != "S" && position != "B" && position != "I" && position != "E") {
           WARNING_LOG("build-config: "
               "a error is detected at instance (%d,%d) %s.", i, j, tag.c_str());
@@ -148,6 +154,7 @@ void NamedEntityRecognizerFrontend::build_configuration(void) {
   }
 
   build_glob_tran_cons(ne_types);
+  INFO_LOG("build-config: add %d constrains.", glob_con->size());
 }
 
 void NamedEntityRecognizerFrontend::build_feature_space(void) {
@@ -192,9 +199,9 @@ void NamedEntityRecognizerFrontend::train(void) {
   INFO_LOG("report: allocate %d dimensition parameter.", model->space.dim());
 
   int nr_groups = model->space.num_groups();
-  std::vector<int> groupwise_update_counters;
+  std::vector<size_t> update_counts;
   if (train_opt.rare_feature_threshold > 0) {
-    groupwise_update_counters.resize(nr_groups, 0);
+    update_counts.resize(nr_groups, 0);
     INFO_LOG("report: allocate %d update-time counters", nr_groups);
   } else {
     INFO_LOG("report: model truncation is inactived.");
@@ -203,7 +210,6 @@ void NamedEntityRecognizerFrontend::train(void) {
   int best_iteration = -1;
   double best_f_score = -1.;
 
-  std::vector<size_t> update_counts;
   if (train_opt.rare_feature_threshold > 0) {
     update_counts.resize(nr_groups, 0);
     INFO_LOG("report: allocate %d update-time counters", nr_groups);
@@ -231,8 +237,8 @@ void NamedEntityRecognizerFrontend::train(void) {
       updated_features.add(ctx.correct_features, 1.);
       updated_features.add(ctx.predict_features, -1.);
 
-      learn(train_opt.algorithm, updated_features, 
-        iter*train_dat.size()+1, inst->num_errors(), model);
+      learn(train_opt.algorithm, updated_features,
+        iter*train_dat.size() + i + 1, inst->num_errors(), model);
 
       if (train_opt.rare_feature_threshold > 0) {
         increase_groupwise_update_counts(model, updated_features, update_counts);
@@ -306,7 +312,7 @@ void NamedEntityRecognizerFrontend::evaluate(double& f_score) {
     build_entities(inst, inst->predict_tagsidx, inst->predict_entities,
         inst->predict_entities_tags);
 
-    num_recalled_entities += inst->num_recalled_entites();
+    num_recalled_entities += inst->num_recalled_entities();
     num_predict_entities += inst->num_predict_entities();
     num_gold_entities += inst->num_gold_entities();
 
@@ -351,6 +357,10 @@ void NamedEntityRecognizerFrontend::test(void) {
   INFO_LOG("report: number of features %d", model->space.num_features());
   INFO_LOG("report: number of dimension %d", model->space.dim());
 
+  size_t num_recalled_entities = 0;
+  size_t num_predict_entities = 0;
+  size_t num_gold_entities = 0;
+
   const char* test_file = test_opt.test_file.c_str();
   std::ifstream ifs(test_file);
 
@@ -359,9 +369,12 @@ void NamedEntityRecognizerFrontend::test(void) {
     return;
   }
 
-  NERWriter writer(std::cout);
+  NERWriter writer(std::cout, test_opt.sequence_prob, test_opt.marginal_prob);
   NERReader reader(ifs, test_opt.evaluate);
   Instance* inst = NULL;
+
+  decoder.set_sequence_prob(test_opt.sequence_prob);
+  decoder.set_marginal_prob(test_opt.marginal_prob);
 
   timer t;
   INFO_LOG("report: start testing ...");
@@ -376,22 +389,55 @@ void NamedEntityRecognizerFrontend::test(void) {
 
     extract_features((*inst), &ctx, false);
     calculate_scores((*inst), ctx, true, &scm);
-    decoder.decode(scm, (*glob_con), inst->predict_tagsidx);
+    if (test_opt.sequence_prob || test_opt.marginal_prob) {
+      decoder.decode(scm,
+              (*glob_con),
+              inst->predict_tagsidx,
+              inst->sequence_probability,
+              inst->point_probabilities,
+              inst->partial_probabilities,
+              inst->partial_idx,
+              true,
+              model->param._last_timestamp);
+    } else {
+      decoder.decode(scm, (*glob_con), inst->predict_tagsidx);
+    }
     ctx.clear();
 
     inst->predict_tags.resize(len);
     for(size_t i = 0; i < len; ++i) {
       inst->predict_tags[i] = model->labels.at(inst->predict_tagsidx[i]);
     }
+
+    if (test_opt.evaluate) {
+      build_entities(inst, inst->tagsidx, inst->entities,
+          inst->entities_tags);
+      build_entities(inst, inst->predict_tagsidx, inst->predict_entities,
+          inst->predict_entities_tags);
+      num_recalled_entities += inst->num_recalled_entities();
+      num_predict_entities += inst->num_predict_entities();
+      num_gold_entities += inst->num_gold_entities();
+    }
+
     writer.write(inst);
     delete inst;
+  }
+
+  if (test_opt.evaluate) {
+    double p = (double)num_recalled_entities / num_predict_entities;
+    double r = (double)num_recalled_entities / num_gold_entities;
+    double f_score = 2*p*r / (p + r);
+
+    INFO_LOG("P: %lf ( %d / %d )", p, num_recalled_entities, num_predict_entities);
+    INFO_LOG("R: %lf ( %d / %d )", r, num_recalled_entities, num_gold_entities);
+    INFO_LOG("F: %lf" , f_score);
   }
 
   INFO_LOG("Elapsed time %lf", t.elapsed());
   return;
 }
 
-void NamedEntityRecognizerFrontend::dump() {
+void NamedEntityRecognizerFrontend::dump(void) {
   // load model
   const char * model_file = dump_opt.model_file.c_str();
   std::ifstream mfs(model_file, std::ifstream::binary);

@@ -17,7 +17,7 @@ using ltp::segmentor::SegmentorFrontend;
 using ltp::segmentor::CustomizedSegmentorFrontend;
 
 int learn(int argc, const char* argv[]) {
-  std::string usage = EXECUTABLE "(learn) in LTP " LTP_VERSION " - (C) 2012-2015 HIT-SCIR\n";
+  std::string usage = EXECUTABLE "(learn) in LTP " LTP_VERSION " - " LTP_COPYRIGHT "\n";
   usage += "Training suite for " DESCRIPTION "\n\n";
   usage += "usage: ./" EXECUTABLE " learn <options>\n\n";
   usage += "options";
@@ -28,13 +28,13 @@ int learn(int argc, const char* argv[]) {
      "The prefix of the model file, model will be stored as model.$iter.")
     ("reference", value<std::string>(),  "The path to the reference file.")
     ("development", value<std::string>(), "The path to the development file.")
-    ("algorithm", value<std::string>(), "The learning algorithm\n"
-                                        " - ap: averaged perceptron\n"
-                                        " - pa: passive aggressive [default]")
-    ("max-iter", value<int>(), "The number of iteration [default=10].")
-    ("rare-feature-threshold", value<int>(),
+    ("algorithm", value<std::string>()->default_value("pa"), "The learning algorithm\n"
+     " - ap: averaged perceptron\n"
+     " - pa: passive aggressive [default]")
+    ("max-iter", value<int>()->default_value(10), "The number of iteration [default=10].")
+    ("rare-feature-threshold", value<int>()->default_value(0),
      "The threshold for rare feature, used in model truncation. [default=0]")
-    ("dump-details", value<bool>(),
+    ("dump-details", value<bool>()->default_value(false),
      "Save the detailed model, used in incremental training. [default=false]")
     ("help,h", "Show help information");
 
@@ -71,25 +71,15 @@ int learn(int argc, const char* argv[]) {
     development = vm["development"].as<std::string>();
   }
 
-  std::string algorithm = "pa";
-  if (vm.count("algorithm")) {
-    algorithm = vm["algorithm"].as<std::string>();
-    if (algorithm != "pa" && algorithm != "ap") {
-      WARNING_LOG("algorithm should either be ap or pa, set as default [pa].");
-      algorithm = "pa";
-    }
+  std::string algorithm = vm["algorithm"].as<std::string>();
+  if (algorithm != "pa" && algorithm != "ap") {
+    WARNING_LOG("algorithm should either be ap or pa, set as default [pa].");
+    algorithm = "pa";
   }
 
-  int max_iter = 10;
-  if (vm.count("max-iter")) { max_iter = vm["max-iter"].as<int>(); }
-
-  int rare_feature_threshold = 0;
-  if (vm.count("rare-feature-threshold")) {
-    rare_feature_threshold= vm["rare-feature-threshold"].as<int>(); }
-
-  bool dump_model_details = false;
-  if (vm.count("dump-details")) {
-    dump_model_details = vm["dump-details"].as<bool>(); }
+  int max_iter = vm["max-iter"].as<int>();
+  int rare_feature_threshold= vm["rare-feature-threshold"].as<int>();
+  bool dump_model_details = dump_model_details = vm["dump-details"].as<bool>();
 
   SegmentorFrontend frontend(reference, development, model_name,
       algorithm, max_iter, rare_feature_threshold, dump_model_details);
@@ -98,8 +88,8 @@ int learn(int argc, const char* argv[]) {
 }
 
 int test(int argc, const char* argv[]) {
-  std::string usage = EXECUTABLE "(test) in LTP " LTP_VERSION " - (C) 2012-2015 HIT-SCIR\n";
-  usage += "Testing suite for " DESCRIPTION "\n\n"; 
+  std::string usage = EXECUTABLE "(test) in LTP " LTP_VERSION " - " LTP_COPYRIGHT "\n";
+  usage += "Testing suite for " DESCRIPTION "\n\n";
   usage += "usage: ./" EXECUTABLE " test <options>\n\n";
   usage += "options";
 
@@ -109,8 +99,10 @@ int test(int argc, const char* argv[]) {
     ("lexicon", value<std::string>(),
      "The lexicon file, (optional, if configured, constrained decoding will be performed).")
     ("input", value<std::string>(), "The path to the reference file.")
-    ("evaluate", value<bool>(),
+    ("evaluate", value<bool>()->default_value(false),
      "if configured, perform evaluation, input words in sentence should be separated by space [default=false].")
+    ("sequence", value<bool>()->default_value(false), "Output the probability of the label sequences")
+    ("marginal", value<bool>()->default_value(false), "Output the marginal probabilities of tags")
     ("help,h", "Show help information");
 
   if (argc == 1) { std::cerr << optparser << std::endl;  return 1; }
@@ -145,17 +137,18 @@ int test(int argc, const char* argv[]) {
   std::string output_file = "";
   if (vm.count("output")) { output_file = vm["output"].as<std::string>(); }
 
-  bool evaluate = false;
-  if (vm.count("evaluate")) { evaluate = vm["evaluate"].as<bool>(); }
+  bool evaluate = vm["evaluate"].as<bool>();
+  bool sequence_prob = vm["sequence"].as<bool>();
+  bool marginal_prob = vm["marginal"].as<bool>();
 
-  SegmentorFrontend frontend(input_file, model_file, evaluate);
+  SegmentorFrontend frontend(input_file, model_file, evaluate, sequence_prob, marginal_prob);
   frontend.test();
   return 0;
 }
 
 int dump(int argc, const char* argv[]) {
-  std::string usage = EXECUTABLE "(dump) in LTP " LTP_VERSION " - (C) 2012-2015 HIT-SCIR\n";
-  usage += "Model visualization suite for " DESCRIPTION "\n\n"; 
+  std::string usage = EXECUTABLE "(dump) in LTP " LTP_VERSION " - " LTP_COPYRIGHT "\n";
+  usage += "Model visualization suite for " DESCRIPTION "\n\n";
   usage += "usage: ./" EXECUTABLE " dump <options>\n\n";
   usage += "options";
 
@@ -188,7 +181,7 @@ int dump(int argc, const char* argv[]) {
 }
 
 int customized_learn(int argc, const char* argv[]) {
-  std::string usage = EXECUTABLE "(customized-learn) in LTP " LTP_VERSION " - (C) 2012-2015 HIT-SCIR\n";
+  std::string usage = EXECUTABLE "(customized-learn) in LTP " LTP_VERSION " - " LTP_COPYRIGHT "\n";
   usage += "Customized training suite for " DESCRIPTION "\n\n";
   usage += "usage: ./" EXECUTABLE " learn <options>\n\n";
   usage += "options";
@@ -201,11 +194,11 @@ int customized_learn(int argc, const char* argv[]) {
     "The prefix of the model file, model will be stored as model.$iter.")
     ("reference", value<std::string>(), "The path to the reference file.")
     ("development", value<std::string>(), "The path to the development file.")
-    ("algorithm", value<std::string>(), "The learning algorithm\n"
+    ("algorithm", value<std::string>()->default_value("pa"), "The learning algorithm\n"
     " - ap: averaged perceptron\n"
     " - pa: passive aggressive [default]")
-    ("max-iter", value<int>(), "The number of iteration [default=10].")
-    ("rare-feature-threshold", value<int>(),
+    ("max-iter", value<int>()->default_value(10), "The number of iteration [default=10].")
+    ("rare-feature-threshold", value<int>()->default_value(0),
     "The threshold for rare feature, used in model truncation. [default=0]")
     ("help,h", "Show help information");
 
@@ -250,22 +243,14 @@ int customized_learn(int argc, const char* argv[]) {
     development = vm["development"].as<std::string>();
   }
 
-  std::string algorithm = "pa";
-  if (vm.count("algorithm")) {
-    algorithm = vm["algorithm"].as<std::string>();
-    if (algorithm != "pa" && algorithm != "ap") {
-      WARNING_LOG("algorithm should either be ap or pa, set as default [pa].");
-      algorithm = "pa";
-    }
+  std::string algorithm = vm["algorithm"].as<std::string>();
+  if (algorithm != "pa" && algorithm != "ap") {
+    WARNING_LOG("algorithm should either be ap or pa, set as default [pa].");
+    algorithm = "pa";
   }
 
-  int max_iter = 10;
-  if (vm.count("max-iter")) { max_iter = vm["max-iter"].as<int>(); }
-
-  int rare_feature_threshold = 0;
-  if (vm.count("rare-feature-threshold")) {
-    rare_feature_threshold = vm["rare-feature-threshold"].as<int>();
-  }
+  int max_iter = vm["max-iter"].as<int>();
+  int rare_feature_threshold = vm["rare-feature-threshold"].as<int>();
 
   CustomizedSegmentorFrontend frontend(reference, development, model_name,
     baseline_model_file, algorithm, max_iter, rare_feature_threshold);
@@ -275,7 +260,7 @@ int customized_learn(int argc, const char* argv[]) {
 
 int customized_test(int argc, const char* argv[]) {
   std::string usage = EXECUTABLE "(customized-test) in LTP " LTP_VERSION
-    " - (C) 2012-2015 HIT-SCIR\n";
+    " - " LTP_COPYRIGHT "\n";
   usage += "Customized testing suite for " DESCRIPTION "\n\n";
   usage += "usage: ./" EXECUTABLE " test <options>\n\n";
   usage += "options";
@@ -287,8 +272,8 @@ int customized_test(int argc, const char* argv[]) {
     ("lexicon", value<std::string>(),
     "The lexicon file, (optional, if configured, constrained decoding will be performed).")
     ("input", value<std::string>(), "The path to the reference file.")
-    ("evaluate", value<bool>(),
-    "if configured, perform evaluation, input words in sentence should be separated by space.")
+    ("evaluate", value<bool>()->default_value(false),
+    "if configured, perform evaluation, input words in sentence should be separated by space [default=false].")
     ("help,h", "Show help information");
 
   if (argc == 1) { std::cerr << optparser << std::endl;  return 1; }
@@ -313,8 +298,7 @@ int customized_test(int argc, const char* argv[]) {
   if (!vm.count("model")) {
     ERROR_LOG("model prefix should be specified [--model].");
     return 1;
-  }
-  else {
+  } else {
     model_file = vm["model"].as<std::string>();
   }
 
@@ -322,8 +306,7 @@ int customized_test(int argc, const char* argv[]) {
   if (!vm.count("input")) {
     ERROR_LOG("input file should be specified [--input].");
     return 1;
-  }
-  else {
+  } else {
     input_file = vm["input"].as<std::string>();
   }
 
@@ -333,8 +316,7 @@ int customized_test(int argc, const char* argv[]) {
   std::string output_file = "";
   if (vm.count("output")) { output_file = vm["output"].as<std::string>(); }
 
-  bool evaluate;
-  if (vm.count("evaluate")) { evaluate = vm["evaluate"].as<bool>(); }
+  bool evaluate = vm["evaluate"].as<bool>();
 
   CustomizedSegmentorFrontend frontend(input_file, model_file,
       baseline_model_file, evaluate);
@@ -343,7 +325,7 @@ int customized_test(int argc, const char* argv[]) {
 }
 
 int main(int argc, const char* argv[]) {
-  std::string usage = EXECUTABLE " in LTP " LTP_VERSION " - (C) 2012-2015 HIT-SCIR\n";
+  std::string usage = EXECUTABLE " in LTP " LTP_VERSION " - " LTP_COPYRIGHT "\n";
   usage += "Training and testing suite for " DESCRIPTION "\n\n";
   usage += "usage: ./" EXECUTABLE;
   usage += " [learn|customized-learn|test|customized-test|dump] <options>";

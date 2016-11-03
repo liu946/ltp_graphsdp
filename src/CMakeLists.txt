@@ -28,6 +28,12 @@ add_subdirectory ("lstmsdparser")
 if (UNIX)
     #add_subdirectory ("unittest")
     add_subdirectory ("server")
+    # only compile unittest with gnu-c++<5.0
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "5.0")
+            add_subdirectory ("unittest")
+        endif()
+    endif()
 endif()
 
 

@@ -4,23 +4,11 @@
 #include "utils/math/mat.h"
 #include "utils/math/sparsevec.h"
 #include "utils/math/featurevec.h"
+#include <cmath>
+#include <float.h>
 
 namespace ltp {
 namespace framework {
-
-struct ViterbiLatticeItem {
-  ViterbiLatticeItem (const size_t& _i, const size_t& _l, const double& _score,
-      const ViterbiLatticeItem* _prev)
-    : i(_i), l(_l), score(_score), prev(_prev) {}
-
-  ViterbiLatticeItem (const size_t& _l, const double& _score)
-    : i(0),  l(_l), score(_score), prev(0) {}
-
-  size_t i;
-  size_t l;
-  double score;
-  const ViterbiLatticeItem* prev;
-};
 
 class ViterbiDecodeConstrain {
 public:
@@ -155,116 +143,370 @@ public:
 
     init_lattice(L, T);
 
-    for (size_t i = 0; i < L; ++ i) {
-      for (size_t t = 0; t < T; ++ t) {
-        if (i == 0) {
-          ViterbiLatticeItem* item = new ViterbiLatticeItem(i, t, scm.emit(i, t), NULL);
-          lattice_insert(lattice[i][t], item);
-        } else {
-          for (size_t pt = 0; pt < T; ++ pt) {
-            const ViterbiLatticeItem* prev = lattice[i-1][pt];
-            if (!prev) { continue; }
+    for (size_t t = 0; t < T; ++t) {
+      state[0][t] = scm.emit(0, t);
+    }
 
-            double s = scm.emit(i, t) + scm.tran(pt, t) + prev->score;
-            ViterbiLatticeItem* item = new ViterbiLatticeItem(i, t, s, prev);
-            lattice_insert(lattice[i][t], item);
+    double best = -DBL_MAX;
+    for (size_t i = 1; i < L; ++ i) {
+      for (size_t t = 0; t < T; ++ t) {
+        best = -DBL_MAX;
+        for (size_t pt = 0; pt < T; ++ pt) {
+          double s = state[i-1][pt] + scm.tran(pt, t);
+          if (s > best) {
+            best = s;
+            back[i][t] = pt;
           }
         }
+        state[i][t] = best + scm.emit(i, t);
       }
     }
 
-    get_result(L-1, output);
-    free_lattice();
+    get_result(output);
   }
 
   void decode(const ViterbiScoreMatrix& scm,
       const ViterbiDecodeConstrain& con,
       std::vector<int>& output) {
+
     size_t L = scm.length();
     size_t T = scm.labels();
 
     init_lattice(L, T);
 
-    for (size_t i = 0; i < L; ++ i) {
+    for (size_t t = 0; t < T; ++t) {
+      if (!con.can_emit(0, t)) continue;
+      state[0][t] = scm.emit(0, t);
+    }
+
+    double best = -DBL_MAX;
+    for (size_t i = 1; i < L; ++ i) {
       for (size_t t = 0; t < T; ++ t) {
-        if (!con.can_emit(i, t)) { continue; }
-
-        if (i == 0) {
-          ViterbiLatticeItem* item = new ViterbiLatticeItem(i, t, scm.emit(i, t), NULL);
-          lattice_insert(lattice[i][t], item);
-        } else {
-          for (size_t pt = 0; pt < T; ++ pt) {
-            if (!con.can_emit(i-1, pt) || !con.can_tran(pt, t)) { continue; }
-
-            const ViterbiLatticeItem* prev = lattice[i-1][pt];
-            if (!prev) { continue; }
-
-            double s = scm.emit(i, t) + scm.tran(pt, t) + prev->score;
-            ViterbiLatticeItem* item = new ViterbiLatticeItem(i, t, s, prev);
-            lattice_insert(lattice[i][t], item);
+        if (!con.can_emit(i, t)) continue;
+        best = -DBL_MAX;
+        for (size_t pt = 0; pt < T; ++ pt) {
+          if (!con.can_emit(i-1, pt) || !con.can_tran(pt, t)) continue;
+          double s = state[i-1][pt] + scm.tran(pt, t);
+          if (s > best) {
+            best = s;
+            back[i][t] = pt;
           }
         }
+        state[i][t] = best + scm.emit(i, t);
       }
     }
-    get_result(L-1, output);
-    free_lattice();
+
+    get_result(output);
   }
+
 protected:
   void init_lattice(const size_t& L, const size_t& T) {
-    lattice.resize(L, T);
-    lattice = NULL;
+    back.resize(L, T);
+    back = -1;
+
+    state.resize(L, T);
+    state = -DBL_MAX;
   }
 
   void get_result(std::vector<int>& output) {
-    size_t L = lattice.nrows();
-    get_result(L- 1, output);
+    size_t L = back.nrows();
+    get_result(L-1, output);
   }
 
   void get_result(const size_t& p, std::vector<int>& output) {
-    size_t T = lattice.ncols();
-
-    const ViterbiLatticeItem* best = NULL;
-    for (size_t t = 0; t < T; ++ t) {
-      if (!lattice[p][t]) {
-        continue;
-      }
-
-      if (best == NULL || lattice[p][t]->score > best->score) {
-        best = lattice[p][t];
-      }
-    }
+    size_t T = back.ncols();
 
     output.resize(p+1);
-    while (best) {
-      output[best->i] = best->l;
-      best = best->prev;
+    double best = -DBL_MAX;
+
+    for (size_t t = 0; t < T; ++t) {
+      double s = state[p][t];
+      if (s > best) {
+        best = s;
+        output[p] = t;
+      }
+    }
+
+    for (int i = p-1; i >= 0; --i) {
+      output[i] = back[i+1][output[i+1]];
     }
   }
 
-  void free_lattice() {
-    size_t L = lattice.total_size();
-    const ViterbiLatticeItem ** p = lattice.c_buf();
-    for (size_t i = 0; i < L; ++ i) {
-      if (p[i]) {
-        delete p[i];
-        p[i] = 0;
+
+  math::Mat<int>     back;
+  math::Mat<double>  state;
+
+};
+
+
+class ViterbiDecoderWithMarginal : public ViterbiDecoder {
+public:
+  ViterbiDecoderWithMarginal(): sequence_prob(false), marginal_prob(false) {}
+
+  void decode(const ViterbiScoreMatrix& scm, std::vector<int>& output) {
+    ViterbiDecoder::decode(scm, output);
+  }
+
+  void decode(const ViterbiScoreMatrix& scm,
+              const ViterbiDecodeConstrain& con,
+              std::vector<int>& output) {
+    ViterbiDecoder::decode(scm, con, output);
+  }
+
+  void init_prob_ctx(const ViterbiScoreMatrix& scm,
+          bool avg = false,
+          size_t last_timestamp = 1) {
+    init_exp(scm, avg, last_timestamp);
+    calc_alpha_score();
+    calc_beta_score();
+  }
+
+  void init_prob_ctx(const ViterbiScoreMatrix& scm,
+          const ViterbiDecodeConstrain& con,
+          bool avg = false,
+          size_t last_timestamp = 1) {
+    init_exp(scm, avg, last_timestamp);
+    calc_alpha_score(con);
+    calc_beta_score(con);
+  }
+
+  void calc_sequence_probability(const std::vector<int>& path, double& sequence_probability) {
+    sequence_probability = marginal_path(path, 0, path.size());
+  }
+
+  void calc_point_probabilities(const std::vector<int>& path, std::vector<double>& point_probabilities) {
+    size_t len = path.size();
+    point_probabilities.resize(len);
+    for (size_t i = 0; i < len; ++i) {
+      point_probabilities[i] = marginal_point(i, path[i]);
+    }
+  }
+
+  void calc_partial_probabilities(const std::vector<int>& path,
+          const std::vector<int>& partial_idx,
+          std::vector<double>& partial_probabilities) {
+
+      partial_probabilities.resize(partial_idx.size());
+      for (size_t i = 0; i < partial_idx.size() - 1; ++i) {
+        if ( i == partial_idx.size() - 1) {
+          partial_probabilities[i] = marginal_path(path, partial_idx[i], path.size());
+        } else {
+          partial_probabilities[i] = marginal_path(path, partial_idx[i], partial_idx[i+1]);
+        }
+      }
+  }
+
+  void set_sequence_prob(bool flag) {
+    sequence_prob = flag;
+  }
+
+  void set_marginal_prob(bool flag) {
+    marginal_prob = flag;
+  }
+
+
+protected:
+  void init_exp(const ViterbiScoreMatrix& scm, bool avg = false, size_t last_timestamp = 1) {
+    size_t L = scm.length();
+    size_t T = scm.labels();
+
+    exp_emit.resize(L, T);
+
+    if (!avg) {
+        last_timestamp = 1;
+    }
+
+    for (int i = 0; i < L; ++ i) {
+      for (int t = 0; t < T; ++ t) {
+        exp_emit[i][t] = exp(scm.emit(i, t) / last_timestamp);
+      }
+    }
+
+    exp_tran.resize(T, T);
+    for (int i = 0; i < T; ++ i) {
+      for (int j = 0; j < T; ++ j) {
+        exp_tran[i][j] = exp(scm.tran(i, j) / last_timestamp);
       }
     }
   }
 
-  void lattice_insert(const ViterbiLatticeItem* &position,
-      const ViterbiLatticeItem * const item) {
-    if (position == NULL) {
-      position = item;
-    } else if (position->score < item->score) {
-      delete position;
-      position = item;
-    } else {
-      delete item;
+  void calc_alpha_score(void) {
+    size_t L = exp_emit.nrows();
+    size_t T = exp_emit.ncols();
+
+    alpha_score.resize(L, T);
+    alpha_score = 0.;
+    scale.resize(L);
+
+    for (size_t j = 0 ; j < T; ++j) {
+      alpha_score[0][j] = exp_emit[0][j];
+    }
+    double sum = row_sum(alpha_score, 0);
+    scale[0] = (sum == 0.) ? 1. : 1. / sum;
+    row_scale(alpha_score, 0, scale[0]);
+
+    for (size_t i = 1; i < L; ++i) {
+      for (size_t t = 0; t < T; ++t) {
+        for (size_t pt = 0;pt < T; ++pt) {
+          alpha_score[i][t] += alpha_score[i-1][pt] * exp_tran[pt][t];
+        }
+        alpha_score[i][t] *= exp_emit[i][t];
+      }
+      sum = row_sum(alpha_score, i);
+      scale[i] = (sum == 0.) ? 1. : 1. / sum;
+      row_scale(alpha_score, i, scale[i]);
     }
   }
 
-  math::Mat< const ViterbiLatticeItem * > lattice;
+  void calc_beta_score(void) {
+    size_t L = exp_emit.nrows();
+    size_t T = exp_emit.ncols();
+
+    beta_score.resize(L, T);
+    beta_score = 0.;
+
+    for (size_t j = 0; j < T; ++j) {
+      beta_score[L-1][j] = scale[L-1];
+    }
+
+    double * tmp_row = new double[T];
+    for (int i = L - 2; i >= 0; --i) {
+      for (size_t nt = 0; nt < T; ++nt) {
+        tmp_row[nt] = beta_score[i+1][nt] * exp_emit[i+1][nt];
+      }
+      for (size_t t = 0; t < T; ++t) {
+        for (size_t nt = 0; nt < T; ++nt) {
+          beta_score[i][t] += tmp_row[nt] * exp_tran[t][nt];
+        }
+      }
+      row_scale(beta_score, i, scale[i]);
+    }
+    delete[] tmp_row;
+  }
+
+  void calc_alpha_score(const ViterbiDecodeConstrain& con) {
+    size_t L = exp_emit.nrows();
+    size_t T = exp_emit.ncols();
+
+    alpha_score.resize(L, T);
+    alpha_score = 0.;
+    scale.resize(L);
+
+    for (size_t j = 0 ; j < T; ++j) {
+      if (!con.can_emit(0, j)) { continue; }
+      alpha_score[0][j] = exp_emit[0][j];
+    }
+    double sum = row_sum(alpha_score, 0, con);
+    scale[0] = (sum == 0.) ? 1. : 1. / sum;
+    row_scale(alpha_score, 0, scale[0], con);
+
+    for (size_t i = 1; i < L; ++i) {
+      for (size_t t = 0; t < T; ++t) {
+        if (!con.can_emit(i, t)) { continue; }
+        for (size_t pt = 0; pt < T; ++pt) {
+          if (!con.can_emit(i-1, pt) || !con.can_tran(pt, t)) { continue; }
+          alpha_score[i][t] += alpha_score[i-1][pt] * exp_tran[pt][t];
+        }
+        alpha_score[i][t] *= exp_emit[i][t];
+      }
+      sum = row_sum(alpha_score, i, con);
+      scale[i] = (sum == 0.) ? 1. : 1. / sum;
+      row_scale(alpha_score, i, scale[i], con);
+    }
+  }
+
+  void calc_beta_score(const ViterbiDecodeConstrain& con) {
+    size_t L = exp_emit.nrows();
+    size_t T = exp_emit.ncols();
+
+    beta_score.resize(L, T);
+    beta_score = 0.;
+
+
+    for (size_t j = 0; j < T; ++j) {
+      if (!con.can_emit(L-1, j)) { continue; }
+      beta_score[L-1][j] = scale[L-1];
+    }
+
+    double * tmp_row = new double[T];
+    for (int i = L - 2; i >= 0; --i) {
+      for (size_t nt = 0; nt < T; ++nt) {
+        if (!con.can_emit(i+1, nt)) { continue; }
+        tmp_row[nt] = beta_score[i+1][nt] * exp_emit[i+1][nt];
+      }
+      for (size_t t = 0; t < T; ++t) {
+        if (!con.can_emit(i, t)) { continue; }
+        for (size_t nt = 0; nt < T; ++nt) {
+          if (!con.can_emit(i+1, nt) || !con.can_tran(t, nt)) { continue; }
+          beta_score[i][t] += tmp_row[nt] * exp_tran[t][nt];
+        }
+      }
+      row_scale(beta_score, i, scale[i], con);
+    }
+    delete[] tmp_row;
+  }
+
+  double row_sum(const math::Mat<double>& mat, size_t i) const {
+    double sum = 0.;
+    for (size_t j = 0; j < mat.ncols(); ++j) {
+      sum += mat[i][j];
+    }
+    return sum;
+  }
+
+  void row_scale(math::Mat<double>& mat, size_t i, double scale) {
+    for (size_t j = 0 ; j < mat.ncols(); ++j) {
+      mat[i][j] *= scale;
+    }
+  }
+
+  double row_sum(const math::Mat<double>& mat,
+          size_t i,
+          const ViterbiDecodeConstrain& con) const {
+    double sum = 0.;
+    for (size_t j = 0; j < mat.ncols(); ++j) {
+      if (!con.can_emit(i, j)) { continue; }
+      sum += mat[i][j];
+    }
+    return sum;
+  }
+
+  void row_scale(math::Mat<double>& mat,
+          size_t i,
+          double scale,
+          const ViterbiDecodeConstrain& con) {
+    for (size_t j = 0 ; j < mat.ncols(); ++j) {
+      if (!con.can_emit(i, j)) { continue; }
+      mat[i][j] *= scale;
+    }
+  }
+
+  double marginal_point(size_t i, size_t j) const {
+    return alpha_score[i][j] * beta_score[i][j] / scale[i];
+  }
+
+  double marginal_path(const std::vector<int>& path, size_t begin, size_t end) const {
+    double prob = alpha_score[begin][path[begin]] * beta_score[end-1][path[end-1]] / scale[begin];
+
+    for (size_t i = begin; i < end-1; ++i) {
+      prob *= (exp_tran[path[i]][path[i+1]] * exp_emit[i+1][path[i+1]] * scale[i]);
+    }
+
+    return prob;
+  }
+
+
+
+protected:
+
+   math::Mat<double>     exp_emit;
+   math::Mat<double>     exp_tran;
+   math::Mat<double>     alpha_score;
+   math::Mat<double>     beta_score;
+   std::vector<double>   scale;
+   bool                  sequence_prob;
+   bool                  marginal_prob;
+
 };
 
 } //  namespace framework

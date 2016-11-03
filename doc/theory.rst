@@ -20,70 +20,6 @@
 
 具体来讲，LTP特征映射是以特征前缀为单位进行组织的。对应的，我们裁剪了同一前缀下更新次数较少的所有特征。
 
-.. _customized-cws-reference-label:
-
-个性化分词
-----------
-
-个性化分词是LTP的特色功能。个性化分词为了解决测试数据切换到如小说、财经等不同于新闻领域的领域。
-在切换到新领域时，用户只需要标注少量数据。
-个性化分词会在原有新闻数据基础之上进行增量训练。
-从而达到即利用新闻领域的丰富数据，又兼顾目标领域特殊性的目的。
-
-准备基础模型
-~~~~~~~~~~~~
-用户可以从百度云托管上获得符合北大切词规范的基础模型。
-如果需要利用其它切词规范的数据作为基础模型，使用 :file:`./tools/train/otcws learn` 训练模型时需要指定 :code:`--dump-details` 选项为true。
-
-个性化训练
-~~~~~~~~~~
-
-个性化分词模型的训练同样可以通过分词训练套件 :file:`otcws` 来实现。::
-
-    $ ./tools/train/otcws customized-learn
-    otcws(customized-learn) in LTP 3.3.0 - (C) 2012-2015 HIT-SCIR
-    Customized training suite for Chinese word segmentation
-
-    usage: ./otcws learn <options>
-
-    options:
-      --baseline-model arg         The baseline model, which should be saved with 
-                                   --dump-details options.
-      --model arg                  The prefix of the model file, model will be 
-                                   stored as model.$iter.
-      --reference arg              The path to the reference file.
-      --development arg            The path to the development file.
-      --algorithm arg              The learning algorithm
-                                    - ap: averaged perceptron
-                                    - pa: passive aggressive [default]
-      --max-iter arg               The number of iteration [default=10].
-      --rare-feature-threshold arg The threshold for rare feature, used in model 
-                                   truncation. [default=0]
-      -h [ --help ]                Show help information
-
-这种情况下，需要指定 :code:`--baseline-model` 参数为前面获得的基础模型。其余选项与 :code:`./tools/train/otcws learn` 一致。
-
-个性化测试
-~~~~~~~~~~
-个性化分词模型的训练同样可以通过分词训练套件 :file:`otcws` 来实现。::
-
-    $ ./tools/train/otcws customized-test
-    otcws(customized-test) in LTP 3.3.0 - (C) 2012-2015 HIT-SCIR
-    Customized testing suite for Chinese word segmentation
-
-    usage: ./otcws test <options>
-
-    options:
-      --baseline-model arg  The path to the baseline model.
-      --model arg           The path to the model file.
-      --lexicon arg         The lexicon file, (optional, if configured, constrained
-                            decoding will be performed).
-      --input arg           The path to the reference file.
-      --evaluate arg        if configured, perform evaluation, input words in 
-                            sentence should be separated by space.
-      -h [ --help ]         Show help information
-
-与customized-learn类似，需指定 :code:`--baseline-model` 参数为前面获得的基础模型。其余选项与 :code:`./tools/train/otcws test` 一致。
 
 测试设置
 ---------
@@ -140,13 +76,80 @@
     +--------+----------+----------+----------+
     |        | P        | R        | F        |
     +========+==========+==========+==========+
-    | 开发集 | 0.973152 | 0.972430 | 0.972791 |
+    | 开发集 | 0.979291 | 0.978217 | 0.978715 |
     +--------+----------+----------+----------+
-    | 测试集 | 0.972316 | 0.970354 | 0.972433 |
+    | 测试集 | 0.979109 | 0.977561 | 0.978335 |
     +--------+----------+----------+----------+
 
-* 运行时内存：124M
-* 速度：392.5K/sec
+* 测试程序：cws_cmdline
+* 运行时内存：175MB
+* 速度：161.97KB/sec
+
+.. _customized-cws-reference-label:
+
+个性化分词
+----------
+
+个性化分词是LTP的特色功能。个性化分词为了解决测试数据切换到如小说、财经等不同于新闻领域的领域。
+在切换到新领域时，用户只需要标注少量数据。
+个性化分词会在原有新闻数据基础之上进行增量训练。
+从而达到即利用新闻领域的丰富数据，又兼顾目标领域特殊性的目的。
+
+准备基础模型
+~~~~~~~~~~~~
+用户可以从百度云托管上获得符合北大切词规范的基础模型。
+如果需要利用其它切词规范的数据作为基础模型，使用 :file:`./tools/train/otcws learn` 训练模型时需要指定 :code:`--dump-details` 选项为true。
+
+个性化训练
+~~~~~~~~~~
+
+个性化分词模型的训练同样可以通过分词训练套件 :file:`otcws` 来实现。::
+
+    $ ./tools/train/otcws customized-learn
+    otcws(customized-learn) in LTP 3.3.2 - (C) 2012-2016 HIT-SCIR
+    Customized training suite for Chinese word segmentation
+
+    usage: ./otcws learn <options>
+
+    options:
+      --baseline-model arg         The baseline model, which should be saved with 
+                                   --dump-details options.
+      --model arg                  The prefix of the model file, model will be 
+                                   stored as model.$iter.
+      --reference arg              The path to the reference file.
+      --development arg            The path to the development file.
+      --algorithm arg              The learning algorithm
+                                    - ap: averaged perceptron
+                                    - pa: passive aggressive [default]
+      --max-iter arg               The number of iteration [default=10].
+      --rare-feature-threshold arg The threshold for rare feature, used in model 
+                                   truncation. [default=0]
+      -h [ --help ]                Show help information
+
+这种情况下，需要指定 :code:`--baseline-model` 参数为前面获得的基础模型。其余选项与 :code:`./tools/train/otcws learn` 一致。
+
+个性化测试
+~~~~~~~~~~
+个性化分词模型的训练同样可以通过分词训练套件 :file:`otcws` 来实现。::
+
+    $ ./tools/train/otcws customized-test
+    otcws(customized-test) in LTP 3.3.2 - (C) 2012-2016 HIT-SCIR
+    Customized testing suite for Chinese word segmentation
+
+    usage: ./otcws test <options>
+
+    options:
+      --baseline-model arg  The path to the baseline model.
+      --model arg           The path to the model file.
+      --lexicon arg         The lexicon file, (optional, if configured, constrained
+                            decoding will be performed).
+      --input arg           The path to the reference file.
+      --evaluate arg        if configured, perform evaluation, input words in 
+                            sentence should be separated by space.
+      -h [ --help ]         Show help information
+
+与customized-learn类似，需指定 :code:`--baseline-model` 参数为前面获得的基础模型。其余选项与 :code:`./tools/train/otcws test` 一致。
+
 
 词性标注模块
 ------------
@@ -182,13 +185,14 @@
     +--------+----------+
     |        | P        |
     +========+==========+
-    | 开发集 | 0.979621 |
+    | 开发集 | 0.983586 |
     +--------+----------+
-    | 测试集 | 0.978337 |
+    | 测试集 | 0.983456 |
     +--------+----------+
 
-* 运行时内存：276M
-* 速度：169.5K/sec
+* 测试程序：pos_cmdline
+* 运行时内存：415MB
+* 速度：45942 tok./sec
 
 命名实体识别模块
 ----------------
@@ -218,30 +222,32 @@
     +--------+----------+----------+----------+
     |        | P        | R        | F        |
     +========+==========+==========+==========+
-    | 开发集 | 0.924149 | 0.909323 | 0.916676 |
+    | 开发集 | 0.924769 | 0.908858 | 0.916745 |
     +--------+----------+----------+----------+
-    | 测试集 | 0.939552 | 0.936372 | 0.937959 |
+    | 测试集 | 0.942912 | 0.940538 | 0.941724 |
     +--------+----------+----------+----------+
 
-* 运行时内存：33M
+* 测试程序：ner_cmdline
+* 运行时内存：23MB
+* 速度：49000 tok./sec
 
 依存句法分析模块
 -----------------
 
 依存句法分析模块的主要算法依据神经网络依存句法分析算法，Chen and Manning (2014)。同时加入丰富的全局特征和聚类特征。在模型训练时，我们也参考了Yoav等人关于dynamic oracle的工作。
-在 `Chinese Dependency Treebank(CDT) <https://catalog.ldc.upenn.edu/LDC2012T05>`_ 数据集上，三种不同解码方式对应的性能如下表所示，其中运行速度和内存开销从CDT测试集（平均29.13词/句）上结果中获得。
+在 `Chinese Dependency Treebank(CDT) <https://catalog.ldc.upenn.edu/LDC2012T05>`_ 数据集上，其中运行速度和内存开销从CDT测试集上结果中获得。
 
 +------------+-------+-------+
 |            | UAS   | LAS   |
 +============+=======+=======+
-| 开发集     | 85.80 | 83.19 |
+| 开发集     | 84.79 | 82.28 |
 +------------+-------+-------+
-| 测试集     | 84.11 | 81.17 |
+| 测试集     | 84.00 | 81.14 |
 +------------+-------+-------+
-| 速度       | 8000 tok./sed |
-+------------+---------------+
-| 运行时内存 | 338.06M       |
-+------------+---------------+
+
+* 测试程序：par_cmdline
+* 运行时内存：366MB
+* 速度：6487 tok./sec
 
 语义角色标注模块
 -----------------

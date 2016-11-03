@@ -2,20 +2,23 @@
 #define __LTP_FRAMEWORK_SERIALIZABLE_H__
 
 #include <iostream>
+#include "boost/cstdint.hpp"
 
 namespace ltp {
 namespace framework {
 
+using boost::uint32_t;
+
 class Serializable {
 protected:
-  void write_uint(std::ostream & out, unsigned int val) const {
-    out.write(reinterpret_cast<const char *>(&val), sizeof(unsigned int));
+  void write_uint(std::ostream & out, uint32_t val) const {
+    out.write(reinterpret_cast<const char *>(&val), sizeof(uint32_t));
   }
 
-  unsigned int read_uint(std::istream & in) const {
-    char p[4];
-    in.read(reinterpret_cast<char*>(p), sizeof(unsigned int));
-    return *reinterpret_cast<const unsigned int*>(p);
+  uint32_t read_uint(std::istream & in) const {
+    char p[sizeof(uint32_t)];
+    in.read(reinterpret_cast<char*>(p), sizeof(uint32_t));
+    return *reinterpret_cast<const uint32_t*>(p);
   }
 };
 

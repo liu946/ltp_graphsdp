@@ -261,17 +261,18 @@ void NeuralNetworkParser::report() {
 
 void NeuralNetworkParser::transduce_instance_to_dependency(const Instance& data,
     Dependency* dependency, bool with_dependencies) {
-  size_t L = data.forms.size();
+  size_t L = data.size();
   for (size_t i = 0; i < L; ++ i) {
     int form = forms_alphabet.index(data.forms[i]);
     if (form == -1) { form = forms_alphabet.index(SpecialOption::UNKNOWN); }
     int postag = postags_alphabet.index(data.postags[i]);
+    int head = with_dependencies? data.heads[i]: -1;
     int deprel = (with_dependencies ? deprels_alphabet.index(data.deprels[i]): -1);
 
     dependency->forms.push_back(form);
     dependency->postags.push_back(postag);
-    dependency->heads.push_back(with_dependencies? data.heads[i]: -1);
-    dependency->deprels.push_back(with_dependencies? deprel: -1);
+    dependency->heads.push_back(head);
+    dependency->deprels.push_back(deprel);
   }
 }
 
@@ -280,7 +281,7 @@ void NeuralNetworkParser::get_cluster_from_dependency(const Dependency& data,
     std::vector<int>& cluster6,
     std::vector<int>& cluster) {
   if (use_cluster) {
-    size_t L = data.forms.size();
+    size_t L = data.size();
     for (size_t i = 0; i < L; ++ i) {
       int form = data.forms[i];
       cluster4.push_back(i == 0?
@@ -443,6 +444,7 @@ bool NeuralNetworkParser::load(const std::string& filename) {
   for (size_t i = 0; i < now; i += 2) {
     precomputation_id_encoder[payload[i]] = payload[i+1];
   }
+  delete [] payload;
 
   if (use_cluster) {
     cluster4_types_alphabet.load(ifs);
@@ -455,7 +457,7 @@ bool NeuralNetworkParser::load(const std::string& filename) {
     for (size_t i = 0; i < now; i += 2) {
       form_to_cluster4[payload[i]] = payload[i+1];
     }
-    delete payload;
+    delete [] payload;
 
     now= read_uint(ifs);
     payload = new int[now];
@@ -463,7 +465,7 @@ bool NeuralNetworkParser::load(const std::string& filename) {
     for (size_t i = 0; i < now; i += 2) {
       form_to_cluster6[payload[i]] = payload[i+1];
     }
-    delete payload;
+    delete [] payload;
 
     now= read_uint(ifs);
     payload = new int[now];
@@ -471,7 +473,7 @@ bool NeuralNetworkParser::load(const std::string& filename) {
     for (size_t i = 0; i < now; i += 2) {
       form_to_cluster[payload[i]] = payload[i+1];
     }
-    delete payload;
+    delete [] payload;
   }
 
   classifier.canonical();

@@ -9,8 +9,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11 -O3 -g -DEIGEN_FAST_MAT
 
 if (APPLE)
   add_definitions(-DGTEST_HAS_TR1_TUPLE=0)
-  set(CMAKE_CXX_FLAGS "-std=c++11 -Wno-c++11-narrowing")
+  set(CMAKE_CXX_FLAGS "-std=c++0x -Wno-c++11-narrowing")
+elseif(UNIX)
+  set(CMAKE_CXX_FLAGS "-std=c++0x")
+elseif(MINGW)
+  set(CMAKE_CXX_FLAGS "-std=c++0x")
+elseif(MSVC)
+  set(CMAKE_CXX_FLAGS "/EHsc")
 endif(APPLE)
+
 
 # -- config output directories
 set (EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)

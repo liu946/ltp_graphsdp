@@ -16,7 +16,7 @@ inline void trim(std::string& str) {
   size_t len = str.size();
   if (len == 0) { return; }
 
-  while (len -1 >=0 && (str[len-1] == ' '
+  while (len >= 1 && (str[len-1] == ' '
         || str[len-1]=='\t'
         || str[len-1] == '\r'
         || str[len-1] == '\n')) {
@@ -463,6 +463,16 @@ inline void clean(std::string &str) {
   } else {
     str = str.substr(pos1, pos2 - pos1 + 1);
   }
+}
+
+inline size_t count(const std::string& str, const std::string& sub) {
+  if (sub.length() == 0) return 0;
+  size_t retval = 0;
+  for (size_t offset = str.find(sub); offset != std::string::npos;
+      offset = str.find(sub, offset + sub.length())) {
+    ++ retval;
+  }
+  return retval;
 }
 
 /**
