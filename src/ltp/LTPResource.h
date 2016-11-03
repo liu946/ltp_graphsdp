@@ -59,10 +59,8 @@ public:
    *  @param[in]  model_file
    *  @return     int             0 on success, otherwise -1
    */
-  int LoadSemanticParserResource(const char* model_file, const char* training_file,
-                                  const char* embedding_file);
-  int LoadSemanticParserResource(const std::string& model_file, const std::string& training_file,
-                                  const std::string& embedding_file);
+  int LoadSemanticParserResource(const char* data_dir);
+  int LoadSemanticParserResource(const std::string& data_dir);
 
   /**
    * load srl resource from model file. Return 0 on success,

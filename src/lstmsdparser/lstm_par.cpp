@@ -8,11 +8,11 @@
 
 int main(int argc, char * argv[]) {
   if (argc < 4) {
-    std::cerr << "usage: ./lstm_par [model] [training_data] [embedding_file]" << std::endl;
+    std::cerr << "usage: ./lstm_par [data directory]" << std::endl;
     return -1;
   }
 
-  void * engine = lstmsdparser_create_parser(argv[1], argv[2], argv[3]);
+  void * engine = lstmsdparser_create_parser(argv[1]);
   if (!engine) {
     std::cerr << "fail to init parser" << std::endl;
     return -1;

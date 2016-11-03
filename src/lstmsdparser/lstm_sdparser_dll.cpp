@@ -47,11 +47,16 @@ public:
   }
 };
 
-void * lstmsdparser_create_parser(const char * model_file, const char * training_data_file, 
-            const char * word_embedding_file) {
+void * lstmsdparser_create_parser(const char * data_dir) {
   __ltp_dll_lstmsdparser_wrapper* wrapper = new __ltp_dll_lstmsdparser_wrapper();
+  std::string model_file = data_dir;
+  model_file += "semparser.model";
+  std::string training_data_file = data_dir; 
+  training_data_file += "semparser.training.oracle";
+  std::string word_embedding_file = data_dir;
+  word_embedding_file += "semparser.embedding";
 
-  if (!wrapper->load(model_file, training_data_file, word_embedding_file)) {
+  if (!wrapper->load(model_file.c_str(), training_data_file.c_str(), word_embedding_file.c_str())) {
     delete wrapper;
     return 0;
   }

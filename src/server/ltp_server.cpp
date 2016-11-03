@@ -68,12 +68,8 @@ int main(int argc, char *argv[]) {
     ("parser-model", value<std::string>(),
      "The path to the parser model [default=ltp_data/parser.model].")
 
-    ("semantic_parser_model", value<std::string>(),
-     "The path to the semparser model [default=ltp_data/semparser.model].")
-    ("semantic_parser_training", value<std::string>(),
-     "The path to the semparser training file [default=ltp_data/semparser.training.oracle].")
-    ("semantic_parser_embedding", value<std::string>(),
-     "The path to the semparser embedding file [default=ltp_data/semparser.embedding].")
+    ("semparser-data", value<std::string>(),
+     "The path to the semparser model [default=ltp_data/semparser/].")
 
     ("srl-data", value<std::string>(),
      "The path to the SRL model directory [default=ltp_data/srl_data/].")
@@ -161,22 +157,11 @@ int main(int argc, char *argv[]) {
   INFO_LOG("parser model after vm :\"%s\"", parser_model.c_str());
 
 
-  std::string semantic_parser_model = "ltp_data/semparser.model";
-  if (vm.count("semantic_parser_model")) {
-    semantic_parser_model = vm["semantic_parser_model"].as<std::string>();
+  std::string semparser_data = "ltp_data/semparser.model";
+  if (vm.count("semparser-data")) {
+    semparser_data = vm["semparser-data"].as<std::string>();
   }
-  INFO_LOG("semantic parser model after model: \"%s\"" ,semantic_parser_model.c_str());
-  std::string semantic_parser_training = "ltp_data/semparser.training.oracle";
-  if (vm.count("semantic_parser_training")) {
-    semantic_parser_training = vm["semantic_parser_training"].as<std::string>();
-  }
-  INFO_LOG("semantic parser training oracle after file: \"%s\"" ,semantic_parser_training.c_str());
-  std::string semantic_parser_embedding = "ltp_data/semparser.embedding";
-  if (vm.count("semantic_parser_embedding")) {
-    semantic_parser_embedding = vm["semantic_parser_embedding"].as<std::string>();
-  }
-  INFO_LOG("semantic parser word embedding after file: \"%s\"" ,semantic_parser_embedding.c_str());
-
+  INFO_LOG("semantic parser source after directory: \"%s\"" ,semparser_data.c_str());
 
   std::string srl_data= "ltp_data/srl/";
   if (vm.count("srl-data")) {
@@ -194,10 +179,9 @@ int main(int argc, char *argv[]) {
   }
 
   INFO_LOG("parser model :\"%s\"", parser_model.c_str());
-  INFO_LOG("semantic parser model: \"%s\"" ,semantic_parser_model.c_str());
+  INFO_LOG("semantic parser model: \"%s\"" ,semparser_data.c_str());
   engine = new LTP(last_stage, segmentor_model, segmentor_lexicon, postagger_model,
-      postagger_lexcion, ner_model, parser_model, semantic_parser_model, srl_data,
-      semantic_parser_training, semantic_parser_embedding);
+      postagger_lexcion, ner_model, parser_model, semparser_data, srl_data);
   if (!engine->loaded()) {
     ERROR_LOG("Failed to setup LTP engine.");
     return 1;

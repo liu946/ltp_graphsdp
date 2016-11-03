@@ -54,10 +54,8 @@ public:
   const std::string& postagger_lexicon_file,
   const std::string& ner_model_file,
   const std::string& parser_model_file,
-  const std::string& semantic_parser_model_file,
-  const std::string& srl_model_dir,
-  const std::string& semantic_parser_training_file ,
-  const std::string& semantic_parser_embedding_file);
+  const std::string& semantic_parser_dir,
+  const std::string& srl_model_dir);
 
   ~LTP();  //! The deallocator
   bool loaded() const;  //! return true on the resource successful loaded, otherwise false
@@ -137,10 +135,8 @@ private:
        const std::string& postagger_lexicon_file,
        const std::string& ner_model_file,
        const std::string& parser_model_file,
-	     const std::string& semantic_parser_model_file,
-       const std::string& srl_model_dir,
-       const std::string& semantic_parser_training_file,
-       const std::string& semantic_parser_embedding_file);
+	     const std::string& semantic_parser_dir,
+       const std::string& srl_model_dir);
 
 private:
   LTPResource _resource;    /*< the ltp resources */

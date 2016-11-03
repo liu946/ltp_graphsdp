@@ -32,20 +32,16 @@ LTP::LTP(const std::string& last_stage,
     const std::string& postagger_lexicon_file,
     const std::string& ner_model_file,
     const std::string& parser_model_file,
-	  const std::string& semantic_parser_model_file,
-    const std::string& srl_model_dir,
-    const std::string& semantic_parser_training_file,
-    const std::string& semantic_parser_embedding_file)
+	  const std::string& semantic_parser_dir,
+    const std::string& srl_model_dir)
   : _resource(), _loaded(false) {
   _loaded = load(last_stage,
       segmentor_model_file, segmentor_lexicon_file,
       postagger_model_file, postagger_lexicon_file,
       ner_model_file,
       parser_model_file,
-	    semantic_parser_model_file,
-      srl_model_dir,
-      semantic_parser_training_file,
-      semantic_parser_embedding_file);
+	    semantic_parser_dir,
+      srl_model_dir);
 }
 
 bool LTP::load(const std::string& last_stage,
@@ -55,10 +51,8 @@ bool LTP::load(const std::string& last_stage,
     const std::string& postagger_lexicon_file,
     const std::string& ner_model_file,
     const std::string& parser_model_file,
-	  const std::string& semantic_parser_model_file,
-    const std::string& srl_model_dir,
-    const std::string& semantic_parser_training_file,
-    const std::string& semantic_parser_embedding_file) {
+	  const std::string& semantic_parser_dir,
+    const std::string& srl_model_dir) {
 
   size_t target_mask = 0;
   if (last_stage == LTP_SERVICE_NAME_SEGMENT) {
@@ -124,7 +118,7 @@ bool LTP::load(const std::string& last_stage,
   }
    
   if (target_mask & kActiveSemanticParser) {
-    if (0 != _resource.LoadSemanticParserResource(semantic_parser_model_file, semantic_parser_training_file, semantic_parser_embedding_file)) {
+    if (0 != _resource.LoadSemanticParserResource(semantic_parser_dir)) {
       ERROR_LOG("in LTP::semantic_parser, failed to load semantic parser resource");
       return false;
     }

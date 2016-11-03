@@ -95,12 +95,8 @@ int main(int argc, char *argv[]) {
     ("parser-model", value<std::string>(),
      "The path to the parser model [default=ltp_data/parser.model].")
 
-    ("semparser-model", value<std::string>(),
-     "The path to the semantic parser model [default=ltp_data/semparser.model].")
-    ("semparser-training", value<std::string>(),
-     "The path to the semantic parser traning file [default=ltp_data/semparser.training.oracle].")
-    ("semparser-embedding", value<std::string>(),
-     "The path to the semantic parser embedding file [default=ltp_data/semparser.embedding].")
+    ("semparser-data", value<std::string>(),
+     "The path to the semantic parser model directory [default=ltp_data/semparser/].")
 
     ("srl-data", value<std::string>(),
      "The path to the SRL model directory [default=ltp_data/srl_data/].")
@@ -178,9 +174,9 @@ int main(int argc, char *argv[]) {
   }
 
 
-  std::string semparser_model = "ltp_data/semparser.model";
-  if (vm.count("semparser-model")) {
-    semparser_model= vm["semparser-model"].as<std::string>();
+  std::string semparser_data = "ltp_data/semparser/";
+  if (vm.count("semparser-data")) {
+    semparser_data= vm["semparser-data"].as<std::string>();
   }
   std::string semparser_training = "ltp_data/semparser.training.oracle";
   if (vm.count("semparser-training")) {
@@ -197,8 +193,7 @@ int main(int argc, char *argv[]) {
   }
   
   LTP engine(last_stage, segmentor_model, segmentor_lexicon, postagger_model,
-      postagger_lexcion, ner_model, parser_model, semparser_model, srl_data,
-      semparser_training, semparser_embedding);
+      postagger_lexcion, ner_model, parser_model, semparser_data, srl_data);
 
   if (!engine.loaded()) {
     std::cerr << "Failed to load LTP" << std::endl;
