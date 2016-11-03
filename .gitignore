@@ -30,6 +30,8 @@ tools/train/otcws
 tools/train/otpos
 tools/train/otner
 tools/train/maxent
+tools/train/lstm-par
+tools/train/lstm-parse
 tools/train/nndepparser
 tools/train/Release/
 tools/train/Debug/

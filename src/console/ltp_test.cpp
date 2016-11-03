@@ -196,8 +196,6 @@ int main(int argc, char *argv[]) {
     srl_data = vm["srl-data"].as<std::string>();
   }
   
-  std::cerr << "in ltp_test.cpp model: " << semparser_model << " train: " << semparser_training 
-  << " embedding: " << semparser_embedding << std::endl;
   LTP engine(last_stage, segmentor_model, segmentor_lexicon, postagger_model,
       postagger_lexcion, ner_model, parser_model, semparser_model, srl_data,
       semparser_training, semparser_embedding);
