@@ -1077,23 +1077,25 @@ void LSTMParser::predict_dev() {
             miss_head++;
             cerr << corpus.intToWords[sentence[0]] << corpus.intToWords[sentence[1]]<< endl;
         }
-        //cerr<<"write to file" <<endl;
+      //cerr<<"write to file" <<endl;
       //output_conll(sentence, sentencePos, sentenceUnkStr, hyp);
       //correct_heads += compute_correct(ref, hyp, sentence.size() - 1);
       //total_heads += sentence.size() - 1;
+      if (sii%100 == 0)
+	cerr << "sentence: " << sii << endl;
     }
+    
     for (unsigned sii = 0; sii < corpus_size; ++sii) {
       const std::vector<unsigned>& sentence = corpus.sentencesDev[sii];
       const std::vector<unsigned>& sentencePos = corpus.sentencesPosDev[sii];
       const std::vector<string>& sentenceUnkStr = corpus.sentencesStrDev[sii]; 
       std::vector<std::vector<string>> hyp = hyps[sii];
       output_conll(sentence, sentencePos, sentenceUnkStr, hyp);
-    }
+    } 
 
     //cerr << "miss head number: " << miss_head << endl;
     map<string, double> results = evaluate(refs, hyps);
     auto t_end = std::chrono::high_resolution_clock::now();
-    if (DEBUG)
       cerr << "TEST llh=" << llh << " ppl: " << exp(llh / trs) << " err: " << (trs - right) / trs 
       << " LF: " << results["LF"] << " UF:" << results["UF"]  << " LP:" << results["LP"] << " LR:" << results["LR"] 
       << " UP:" << results["UP"] << " UR:" <<results["UR"]  << "\t[" << corpus_size << " sents in " 

@@ -35,6 +35,7 @@ tools/train/lstm-parse
 tools/train/nndepparser
 tools/train/Release/
 tools/train/Debug/
+tools/train/
 
 ###############
 # data file   #

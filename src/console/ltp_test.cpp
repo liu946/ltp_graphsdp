@@ -51,6 +51,7 @@ void multithreaded_ltp( void * args) {
       engine->srl(xml4nlp);
     } else {
       engine->srl(xml4nlp);
+      engine->semantic_parser(xml4nlp);
     }
 
     std::string result;
