@@ -1093,7 +1093,6 @@ void LSTMParser::predict_dev() {
     //cerr << "miss head number: " << miss_head << endl;
     map<string, double> results = evaluate(refs, hyps);
     auto t_end = std::chrono::high_resolution_clock::now();
-    if (DEBUG)
       cerr << "TEST llh=" << llh << " ppl: " << exp(llh / trs) << " err: " << (trs - right) / trs 
       << " LF: " << results["LF"] << " UF:" << results["UF"]  << " LP:" << results["LP"] << " LR:" << results["LR"] 
       << " UP:" << results["UP"] << " UR:" <<results["UR"]  << "\t[" << corpus_size << " sents in " 
