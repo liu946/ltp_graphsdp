@@ -25,11 +25,13 @@ LTPResource::LTPResource() :
   m_ner(NULL),
   m_parser(NULL),
   m_semanticparser(NULL),
+  m_lstmsemanticparser(NULL),
   m_isSegmentorResourceLoaded(false),
   m_isPostaggerResourceLoaded(false),
   m_isNEResourceLoaded(false),
   m_isParserResourceLoaded(false),
   m_isSemanticParserResourceLoaded(false),
+  m_isLSTMSemanticParserResourceLoaded(false),
   m_isSRLResourceLoaded(false) {
 }
 
@@ -40,6 +42,7 @@ LTPResource::~LTPResource() {
   ReleaseNEResource();
   ReleaseParserResource();
   ReleaseSemanticParserResource();
+  ReleaseLSTMSemanticParserResource();
   ReleaseSRLResource();
 }
 
@@ -237,14 +240,14 @@ void * LTPResource::GetParser() {
 /* ====================================================== *
  * Semantic parser related resource                                *
  * ====================================================== */
-int LTPResource::LoadSemanticParserResource(const char* data_dir) {
+int LTPResource::LoadSemanticParserResource(const char* model_file) {
   if (m_isSemanticParserResourceLoaded) {
     return 0;
   }
 
-  INFO_LOG("Loading semantic parser resource from \"%s\"", data_dir);
+  INFO_LOG("Loading semantic parser resource from \"%s\"", model_file);
 
-  m_semanticparser = lstmsdparser_create_parser(data_dir);
+  m_semanticparser = parser_create_parser(model_file);
   if (!m_semanticparser) {
     ERROR_LOG("Failed to create semantic parser");
     return -1;
@@ -256,8 +259,8 @@ int LTPResource::LoadSemanticParserResource(const char* data_dir) {
   return 0;
 }
 
-int LTPResource::LoadSemanticParserResource(const std::string& data_dir) {
-  return LoadSemanticParserResource(data_dir.c_str());
+int LTPResource::LoadSemanticParserResource(const std::string& model_file) {
+  return LoadSemanticParserResource(model_file.c_str());
 }
 
 void LTPResource::ReleaseSemanticParserResource() {
@@ -265,7 +268,7 @@ void LTPResource::ReleaseSemanticParserResource() {
     return;
   }
 
-  lstmsdparser_release_parser(m_semanticparser);
+  parser_release_parser(m_semanticparser);
   INFO_LOG("Semantic parser is released");
 
   m_semanticparser = NULL;
@@ -274,6 +277,49 @@ void LTPResource::ReleaseSemanticParserResource() {
 
 void * LTPResource::GetSemanticParser() {
   return m_semanticparser;
+}
+
+
+/* ====================================================== *
+ * LSTM Semantic parser related resource                                *
+ * ====================================================== */
+int LTPResource::LoadLSTMSemanticParserResource(const char* data_dir) {
+  if (m_isLSTMSemanticParserResourceLoaded) {
+    return 0;
+  }
+
+  INFO_LOG("Loading lstm semantic parser resource from \"%s\"", data_dir);
+
+  m_lstmsemanticparser = lstmsdparser_create_parser(data_dir);
+  if (!m_lstmsemanticparser) {
+    ERROR_LOG("Failed to create lstm semantic parser");
+    return -1;
+  }
+
+  INFO_LOG("lstm semantic parser is loaded.");
+
+  m_isLSTMSemanticParserResourceLoaded = true;
+  return 0;
+}
+
+int LTPResource::LoadLSTMSemanticParserResource(const std::string& data_dir) {
+  return LoadLSTMSemanticParserResource(data_dir.c_str());
+}
+
+void LTPResource::ReleaseLSTMSemanticParserResource() {
+  if (!m_isLSTMSemanticParserResourceLoaded) {
+    return;
+  }
+
+  lstmsdparser_release_parser(m_lstmsemanticparser);
+  INFO_LOG("LSTM Semantic parser is released");
+
+  m_lstmsemanticparser = NULL;
+  m_isLSTMSemanticParserResourceLoaded = false;
+}
+
+void * LTPResource::GetLSTMSemanticParser() {
+  return m_lstmsemanticparser;
 }
 
 

@@ -59,8 +59,18 @@ public:
    *  @param[in]  model_file
    *  @return     int             0 on success, otherwise -1
    */
-  int LoadSemanticParserResource(const char* data_dir);
-  int LoadSemanticParserResource(const std::string& data_dir);
+  int LoadSemanticParserResource(const char* model_file);
+  int LoadSemanticParserResource(const std::string& model_file);
+
+  /**
+   * load lstm semantic parser resource from model file. Return 0 on success,
+   * otherwise -1.
+   *
+   *  @param[in]  model_file
+   *  @return     int             0 on success, otherwise -1
+   */
+  int LoadLSTMSemanticParserResource(const char* data_dir);
+  int LoadLSTMSemanticParserResource(const std::string& data_dir);
 
   /**
    * load srl resource from model file. Return 0 on success,
@@ -77,18 +87,21 @@ public:
   void ReleaseNEResource(void);
   void ReleaseParserResource(void);
   void ReleaseSemanticParserResource(void);
+  void ReleaseLSTMSemanticParserResource(void);
   void ReleaseSRLResource(void);
 
   void* GetSegmentor();   // access the segmentor.
   void* GetPostagger();   // access the postagger.
   void* GetParser();      // access the parser.
   void* GetSemanticParser();      // access the semanticparser.
+  void* GetLSTMSemanticParser();      // access the semanticparser.
   void* GetNER();         // access the ner.
 private:
   void* m_segmentor;
   void* m_postagger;
   void* m_parser;
   void* m_semanticparser;
+  void* m_lstmsemanticparser;
   void* m_ner;
 private:
   bool m_isSegmentorResourceLoaded;
@@ -96,6 +109,7 @@ private:
   bool m_isNEResourceLoaded;
   bool m_isParserResourceLoaded;
   bool m_isSemanticParserResourceLoaded;
+  bool m_isLSTMSemanticParserResourceLoaded;
   bool m_isSRLResourceLoaded;
 };
 

@@ -20,6 +20,7 @@ const char * const NOTE_POS     = "pos";
 const char * const NOTE_NE      = "ne";
 const char * const NOTE_PARSER  = "parser";
 const char * const NOTE_SEMANTIC_PARSER  = "semparser";
+const char * const NOTE_LSTM_SEMANTIC_PARSER  = "lstmsemparser";
 const char * const NOTE_WSD     = "wsd";
 const char * const NOTE_SRL     = "srl";
 //const char * const NOTE_CLASS = "class";
@@ -842,7 +843,7 @@ int XML4NLP::SetSemanticParsesToSentence(const std::vector< std::pair<int, std::
 */
 
 // for lstm parser
-int XML4NLP::SetSemanticParsesToSentence(const std::vector<std::vector<std::string>> & vecSemResult,
+int XML4NLP::SetLSTMSemanticParsesToSentence(const std::vector<std::vector<std::string>> & vecSemResult,
                                  int pid, int sid) {
   if (0 != CheckRange(pid, sid)) return -1;
 
@@ -887,14 +888,14 @@ int XML4NLP::SetSemanticParsesToSentence(const std::vector<std::vector<std::stri
   return 0;
 }
 
-int XML4NLP::SetSemanticParsesToSentence(const std::vector<std::vector<std::string>> & vecSemResult,
+int XML4NLP::SetLSTMSemanticParsesToSentence(const std::vector<std::vector<std::string>> & vecSemResult,
                                  int global_sid) {
   int pid, sid;
   if (0 != DecodeGlobalId(global_sid, pid, sid)) return -1;
-  return SetSemanticParsesToSentence(vecSemResult, pid, sid);
+  return SetLSTMSemanticParsesToSentence(vecSemResult, pid, sid);
 }
 
-// legacy
+// for semantic parser
 int XML4NLP::SetSemanticParsesToSentence(const std::vector<int> & heads,
                                  const std::vector<std::string> & deprels,
                                  int pid,
@@ -1398,6 +1399,7 @@ bool XML4NLP::LTMLValidation() {
       || !note.nodePtr->Attribute(NOTE_POS)
       || !note.nodePtr->Attribute(NOTE_PARSER)
       || !note.nodePtr->Attribute(NOTE_SEMANTIC_PARSER)
+      || !note.nodePtr->Attribute(NOTE_LSTM_SEMANTIC_PARSER)
       || !note.nodePtr->Attribute(NOTE_NE)
       || !note.nodePtr->Attribute(NOTE_SRL)) {
     return false;
@@ -1409,6 +1411,7 @@ bool XML4NLP::LTMLValidation() {
   state |= QueryNote(NOTE_NE);      state <<= 1;
   state |= QueryNote(NOTE_PARSER);  state <<= 1;
   state |= QueryNote(NOTE_SEMANTIC_PARSER);   state <<= 1;
+  state |= QueryNote(NOTE_LSTM_SEMANTIC_PARSER);   state <<= 1;
   state |= QueryNote(NOTE_POS);     state <<= 1;
   state |= QueryNote(NOTE_WORD);    state <<= 1;
   state |= QueryNote(NOTE_SENT);
@@ -1504,6 +1507,7 @@ void XML4NLP::ClearAllNote() {
   ClearNote(NOTE_NE);
   ClearNote(NOTE_PARSER);
   ClearNote(NOTE_SEMANTIC_PARSER);
+  ClearNote(NOTE_LSTM_SEMANTIC_PARSER);
   ClearNote(NOTE_WSD);
   ClearNote(NOTE_SRL);
   //  ClearNote(NOTE_CLASS);
