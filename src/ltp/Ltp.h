@@ -55,7 +55,8 @@ public:
   const std::string& ner_model_file,
   const std::string& parser_model_file,
   const std::string& semantic_parser_dir,
-  const std::string& srl_model_dir);
+  const std::string& srl_model_dir,
+  const std::string& lstm_semantic_parser_dir);
 
   ~LTP();  //! The deallocator
   bool loaded() const;  //! return true on the resource successful loaded, otherwise false
@@ -111,6 +112,14 @@ public:
   int semantic_parser(XML4NLP & xml);
 
   /*
+   * do semantic dependency parsing
+   *
+   *  @param[in/out]  xml   the xml storing ltp result
+   *  @return         int   0 on success, otherwise -1
+   */
+  int lstm_semantic_parser(XML4NLP & xml);
+
+  /*
    * do semantic role labeling
    *
    *  @param[in/out]  xml   the xml storing ltp result
@@ -136,7 +145,8 @@ private:
        const std::string& ner_model_file,
        const std::string& parser_model_file,
 	     const std::string& semantic_parser_dir,
-       const std::string& srl_model_dir);
+       const std::string& srl_model_dir,
+       const std::string& lstm_semantic_parser_dir);
 
 private:
   LTPResource _resource;    /*< the ltp resources */

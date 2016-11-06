@@ -30,6 +30,7 @@ extern const char * const NOTE_POS;
 extern const char * const NOTE_NE;
 extern const char * const NOTE_PARSER;  // need a copy for NOTE_SEMANTIC PARSER
 extern const char * const NOTE_SEMANTIC_PARSER; 
+extern const char * const NOTE_LSTM_SEMANTIC_PARSER; 
 extern const char * const NOTE_WSD;
 extern const char * const NOTE_SRL;
 extern const char * const NOTE_CLASS;
@@ -654,14 +655,14 @@ public:
       int sentenceIdx);
 */
   // for lstm parser
-  int SetSemanticParsesToSentence(const std::vector<std::vector<std::string>> & vecSemResult,
+  int SetLSTMSemanticParsesToSentence(const std::vector<std::vector<std::string>> & vecSemResult,
       int paragraphIdx,
       int sentenceIdx);
 
-  int SetSemanticParsesToSentence(const std::vector<std::vector<std::string>> & vecSemResult,
+  int SetLSTMSemanticParsesToSentence(const std::vector<std::vector<std::string>> & vecSemResult,
       int sentenceIdx);
 
-  //legacy
+  // for semantic parser
   int SetSemanticParsesToSentence(const vector<int> &vecHead,
       const vector<string> &vecRel,
       int paragraphIdx,

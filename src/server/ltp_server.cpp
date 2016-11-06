@@ -69,7 +69,10 @@ int main(int argc, char *argv[]) {
      "The path to the parser model [default=ltp_data/parser.model].")
 
     ("semparser-data", value<std::string>(),
-     "The path to the semparser model [default=ltp_data/semparser/].")
+     "The path to the lstm semparser model [default=ltp_data/semparser/].")
+
+    ("semparser-model", value<std::string>(),
+     "The path to the original semparser model [default=ltp_data/semparser.model].")
 
     ("srl-data", value<std::string>(),
      "The path to the SRL model directory [default=ltp_data/srl_data/].")
@@ -157,11 +160,17 @@ int main(int argc, char *argv[]) {
   INFO_LOG("parser model after vm :\"%s\"", parser_model.c_str());
 
 
-  std::string semparser_data = "ltp_data/semparser.model";
+  std::string lstm_semparser_data = "ltp_data/semparser/";
   if (vm.count("semparser-data")) {
-    semparser_data = vm["semparser-data"].as<std::string>();
+    lstm_semparser_data = vm["semparser-data"].as<std::string>();
   }
-  INFO_LOG("semantic parser source after directory: \"%s\"" ,semparser_data.c_str());
+  INFO_LOG("lstm semantic parser source after directory: \"%s\"" ,lstm_semparser_data.c_str());
+
+  std::string semparser_model = "ltp_data/semparser.model";
+  if (vm.count("semparser-model")) {
+    semparser_model= vm["semparser-model"].as<std::string>();
+  }
+  INFO_LOG("semantic parser source after directory: \"%s\"" ,semparser_model.c_str());
 
   std::string srl_data= "ltp_data/srl/";
   if (vm.count("srl-data")) {
@@ -179,9 +188,10 @@ int main(int argc, char *argv[]) {
   }
 
   INFO_LOG("parser model :\"%s\"", parser_model.c_str());
-  INFO_LOG("semantic parser model: \"%s\"" ,semparser_data.c_str());
+  INFO_LOG("semantic parser model: \"%s\"" ,lstm_semparser_data.c_str());
   engine = new LTP(last_stage, segmentor_model, segmentor_lexicon, postagger_model,
-      postagger_lexcion, ner_model, parser_model, semparser_data, srl_data);
+      postagger_lexcion, ner_model, parser_model, semparser_model, srl_data, 
+      lstm_semparser_data);
   if (!engine->loaded()) {
     ERROR_LOG("Failed to setup LTP engine.");
     return 1;
@@ -399,6 +409,12 @@ static int Service(struct mg_connection *conn) {
       }
 
       ret = engine->semantic_parser(xml4nlp); //semantic parser
+      if (0 != ret) {
+        ErrorResponse(conn, static_cast<ErrorCodes>(ret));
+        return 0;
+      }
+
+      ret = engine->lstm_semantic_parser(xml4nlp); //lstm semantic parser
       if (0 != ret) {
         ErrorResponse(conn, static_cast<ErrorCodes>(ret));
         return 0;
