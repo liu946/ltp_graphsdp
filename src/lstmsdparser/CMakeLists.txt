@@ -39,10 +39,10 @@ configure_file (
     ${INCLUDE_OUTPUT_PATH}/ltp/lstm_sdparser_dll.h)
 
 
-add_executable(lstm_par lstm_par.cpp)
-target_link_libraries (lstm_par lstm_sdparser_static_lib cnn ${Boost_LIBRARIES})
-set_target_properties (lstm_par PROPERTIES
-    OUTPUT_NAME lstm-par
-    RUNTIME_OUTPUT_DIRECTORY ${TOOLS_DIR}/train/)
+add_executable(lstm_par_cmdline lstm_par_cmdline.cpp)
+target_link_libraries (lstm_par_cmdline lstm_sdparser_static_lib cnn ${Boost_LIBRARIES})
+set_target_properties (lstm_par_cmdline PROPERTIES
+    OUTPUT_NAME lstm_par_cmdline
+    RUNTIME_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}/examples/)
 
 
