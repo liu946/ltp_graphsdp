@@ -62,8 +62,11 @@ typedef struct Options {
 	bool USE_POS; // true
 }Options;
 
+static volatile bool requested_stop;
+
 class LSTMParser {
 public:
+  bool DEBUG = false;
   cpyp::Corpus corpus;
   vector<unsigned> possible_actions;
 	unordered_map<unsigned, vector<float>> pretrained;
@@ -71,6 +74,7 @@ public:
 	Sizes System_size;
 	std::string transition_system;
   Model model;
+  
 
   unsigned kUNK;
   set<unsigned> training_vocab; // words available in the training corpus
@@ -145,6 +149,10 @@ public:
                                     ComputationGraph* hg, const std::vector<string>& setOfActions, 
                                     int s0, int b0, std::vector<Expression>& word_rep, Expression& act_rep, int sent_size, 
                                     int dir, double *score, string *rel);
+
+  static void signal_callback_handler(int /* signum */);
+
+  void train(const std::string fname, const unsigned unk_strategy, const double unk_prob);
 
   void predict_dev();
 

@@ -3,12 +3,12 @@
 
 #include "lstm_sdparser_dll.h"
 
-#define EXECUTABLE "lstm_par"
+#define EXECUTABLE "lstm_par_cmdline"
 #define DESCRIPTION "The console application for dependency parsing."
 
 int main(int argc, char * argv[]) {
-  if (argc < 4) {
-    std::cerr << "usage: ./lstm_par [data directory]" << std::endl;
+  if (argc < 3) {
+    std::cerr << "usage: ./lstm_par [data directory] [input file]" << std::endl;
     return -1;
   }
 
