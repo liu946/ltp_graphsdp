@@ -3,10 +3,18 @@
 #include <string>
 #include <vector>
 
+#include "boost/program_options.hpp"
+#include "config.h"
 #include "lstm_sdparser_dll.h"
 
 #define EXECUTABLE "lstm_par_cmdline"
-#define DESCRIPTION "The console application for dependency parsing."
+#define DESCRIPTION "The console application for semantic dependency graph parsing."
+
+using boost::program_options::options_description;
+using boost::program_options::value;
+using boost::program_options::variables_map;
+using boost::program_options::store;
+using boost::program_options::parse_command_line;
 
 void split(const std::string& src, const std::string& separator, std::vector<std::string>& dest)
 {
@@ -49,18 +57,48 @@ void output_conll(std::vector<std::string> words, std::vector<std::string> posta
 }
 
 int main(int argc, char * argv[]) {
+  std::string usage = EXECUTABLE " in LTP " LTP_VERSION " - " LTP_COPYRIGHT "\n";
+  usage += DESCRIPTION "\n\n";
+  usage += "usage: ./" EXECUTABLE " <options>\n\n";
+  usage += "options";
+
+  options_description optparser = options_description(usage);
+  optparser.add_options()
+    ("model-directory", value<std::string>(), "The directory of model folder [default=ltp_data/semparser/].")
+    ("input", value<std::string>(), "The path to the input file. "
+     "Input data should contain one sentence each line. "
+     "Words should be separated by space with POS tag appended by "
+     "'_' (e.g. \"w1_p1 w2_p2 w3_p3 w4_p4\").")
+    ("help,h", "Show help information");
+
+  if (argc == 1) {
+    std::cerr << optparser << std::endl;
+    return 1;
+  }
+
+  variables_map vm;
+  store(parse_command_line(argc, argv, optparser), vm);
+
+  std::string input = "";
+  if (vm.count("input")) { input = vm["input"].as<std::string>(); }
+
+  std::string model_directory = "ltp_data/semparser/";
+  if (vm.count("model-directory")) {
+    model_directory = vm["model-directory"].as<std::string>();
+  }
+  /*
   if (argc < 3) {
     std::cerr << "usage: ./lstm_par [data directory] [input file]" << std::endl;
     return -1;
-  }
+  }*/
 
-  void * engine = lstmsdparser_create_parser(argv[1]);
+  void * engine = lstmsdparser_create_parser(model_directory.c_str());
   if (!engine) {
     std::cerr << "fail to init parser" << std::endl;
     return -1;
   }
 
-  std::ifstream ifs(argv[2]);
+  std::ifstream ifs(input.c_str());
 
   std::string sentence = "";
   while (!ifs.eof()) {
