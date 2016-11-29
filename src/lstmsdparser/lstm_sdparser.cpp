@@ -7,7 +7,6 @@ using namespace cnn::expr;
 using namespace cnn;
 using namespace std;
 namespace po = boost::program_options;
-bool DEBUG = false;
 
 //struct LSTMParser {
 
@@ -21,9 +20,6 @@ void LSTMParser::set_options(Options opts){
 
 bool LSTMParser::load(string model_file, string training_data_file, string word_embedding_file,
                         string dev_data_file){
-  //this->pretrained = pretrained;
-  //this->possible_actions = possible_actions;
-  //this->System_size = System_size;
   this->transition_system = Opt.transition_system;
   if (DEBUG)
     cerr << "Loading training data from " << training_data_file << endl;
@@ -833,7 +829,6 @@ vector<unsigned> LSTMParser::log_prob_parser(ComputationGraph* hg,
     //action_lstm.add_input(act_rep);
     vector<Expression> buffer;  // variables representing word embeddings (possibly including POS info)
     vector<int> bufferi;
-    //cerr  << "ppppps 5" << endl;
     Expression w =lookup(*hg, p_w, sent[b0]);
 
     vector<Expression> args = {ib, w2l, w}; // learn embeddings
@@ -851,7 +846,6 @@ vector<unsigned> LSTMParser::log_prob_parser(ComputationGraph* hg,
 
     buffer.push_back(parameter(*hg, p_buffer_guard));
     buffer.push_back(rectify(affine_transform(args)));
-    //cerr  << "ppppps 6" << endl;
     bufferi.push_back(-999);
     bufferi.push_back(b0);
     for (auto& b : buffer)
@@ -861,8 +855,6 @@ vector<unsigned> LSTMParser::log_prob_parser(ComputationGraph* hg,
     vector<Expression> pass; //variables reperesenting embedding in pass buffer
     pass.push_back(parameter(*hg, p_pass_guard));
     pass_lstm.add_input(pass.back());
-
-    //cerr  << "ppppps 3" << endl;
 
     args = {ib, w2l, w}; // learn embeddings
     if (Opt.USE_POS) { // learn POS tag?
@@ -894,11 +886,9 @@ vector<unsigned> LSTMParser::log_prob_parser(ComputationGraph* hg,
         //cerr << " <" << setOfActions[a] << "> ";
         current_valid_actions.push_back(a);
     }
-    //cerr  << "ppppps 2" << endl;
     // p_t = pbias + S * slstm + P * plstm + B * blstm + A * almst
     Expression p_t = affine_transform({pbias, S, stack_lstm.back(), P, pass_lstm.back(), B, buffer_lstm.back(), A, action_lstm.back()});
     Expression nlp_t = rectify(p_t);
-    //cerr  << "ppppps 1" << endl;
     // r_t = abias + p2a * nlp
     Expression r_t = affine_transform({abias, p2a, nlp_t});
 
@@ -921,8 +911,6 @@ vector<unsigned> LSTMParser::log_prob_parser(ComputationGraph* hg,
     *score = second_score;
     *rel = second_a;
   }
-
-//}; //end of the struct
 
 bool LSTMParser::has_path_to(int w1, int w2, const vector<vector<string>>& graph){
     //cerr << endl << w1 << " has path to " << w2 << endl;
@@ -1016,6 +1004,145 @@ int LSTMParser::process_headless(vector<vector<string>>& hyp, vector<vector<stri
       }
     //cerr << "miss_head_num: " << miss_head_num << endl;
     return miss_head_num;
+}
+
+void LSTMParser::signal_callback_handler(int /* signum */) {
+  if (requested_stop) {
+    cerr << "\nReceived SIGINT again, quitting.\n";
+    _exit(1);
+  }
+  cerr << "\nReceived SIGINT terminating optimization early...\n";
+  requested_stop = true;
+}
+
+void LSTMParser::train(const std::string fname, const unsigned unk_strategy, 
+                        const double unk_prob) {
+    requested_stop = false;
+    signal(SIGINT, signal_callback_handler);
+    unsigned status_every_i_iterations = 100;
+    int best_LF = 0;
+    bool softlinkCreated = false;
+    SimpleSGDTrainer sgd(&model);
+    sgd.eta_decay = 0.08;
+    std::vector<unsigned> order(corpus.nsentences);
+    for (unsigned i = 0; i < corpus.nsentences; ++i)
+      order[i] = i;
+    double tot_seen = 0;
+    status_every_i_iterations = min(status_every_i_iterations, corpus.nsentences);
+    unsigned si = corpus.nsentences;
+    cerr << "NUMBER OF TRAINING SENTENCES: " << corpus.nsentences << endl;
+    unsigned trs = 0;
+    double right = 0;
+    double llh = 0;
+    bool first = true;
+    int iter = -1;
+    //time_t time_start = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    time_t time_start = time(NULL);
+    std::string t_s(asctime(localtime(&time_start))); 
+    //cerr << "TRAINING STARTED AT: " << asctime(localtime(&time_start)) << endl;
+    cerr << "TRAINING STARTED AT: " << t_s.substr(0, t_s.size() - 1) << endl;
+    while(!requested_stop) {
+      ++iter;
+      for (unsigned sii = 0; sii < status_every_i_iterations; ++sii) {
+           if (si == corpus.nsentences) {
+             si = 0;
+             if (first) { first = false; } else { sgd.update_epoch(); }
+             cerr << "**SHUFFLE\n";
+             random_shuffle(order.begin(), order.end());
+           }
+           tot_seen += 1;
+           const std::vector<unsigned>& sentence=corpus.sentences[order[si]];
+           std::vector<unsigned> tsentence=sentence;
+           if (unk_strategy == 1) {
+             for (auto& w : tsentence)
+               if (singletons.count(w) && cnn::rand01() < unk_prob) w = kUNK;
+           }
+     const std::vector<unsigned>& sentencePos=corpus.sentencesPos[order[si]]; 
+     const std::vector<unsigned>& actions=corpus.correct_act_sent[order[si]];
+           ComputationGraph hg;
+           //cerr << "Start word:" << corpus.intToWords[sentence[0]]<<corpus.intToWords[sentence[1]] << endl;
+           std::vector<std::vector<string>> cand;
+
+           log_prob_parser(&hg,sentence,tsentence,sentencePos,actions,&right,cand);
+           double lp = as_scalar(hg.incremental_forward());
+           if (lp < 0) {
+             cerr << "Log prob < 0 on sentence " << order[si] << ": lp=" << lp << endl;
+             assert(lp >= 0.0);
+           }
+           hg.backward();
+           sgd.update(1.0);
+           llh += lp;
+           ++si;
+           trs += actions.size();
+      }
+      sgd.status();
+      //time_t time_now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+      time_t time_now = time(NULL);
+      std::string t_n(asctime(localtime(&time_now))); 
+      cerr << "update #" << iter << " (epoch " << (tot_seen / corpus.nsentences) << " |time=" << t_n.substr(0, t_n.size() - 1) << ")\tllh: "<< llh<<" ppl: " << exp(llh / trs) << " err: " << (trs - right) / trs << endl;
+      llh = trs = right = 0;
+
+      static int logc = 0;
+      ++logc;
+      if (logc % 25 == 1) { // report on dev set
+        unsigned dev_size = corpus.nsentencesDev;
+        // dev_size = 100;
+        double llh = 0;
+        double trs = 0;
+        double right = 0;
+        //double correct_heads = 0;
+        //double total_heads = 0;
+        auto t_start = std::chrono::high_resolution_clock::now();
+        std::vector<std::vector<std::vector<string>>> refs, hyps;
+        for (unsigned sii = 0; sii < dev_size; ++sii) {
+           const std::vector<unsigned>& sentence=corpus.sentencesDev[sii];
+     const std::vector<unsigned>& sentencePos=corpus.sentencesPosDev[sii]; 
+     const std::vector<unsigned>& actions=corpus.correct_act_sentDev[sii];
+           std::vector<unsigned> tsentence=sentence;
+           for (auto& w : tsentence)
+             if (training_vocab.count(w) == 0) w = kUNK;
+
+           ComputationGraph hg;
+           std::vector<std::vector<string>> cand;
+            std::vector<unsigned> pred = log_prob_parser(&hg,sentence,tsentence,sentencePos,std::vector<unsigned>(),&right,cand);
+           double lp = 0;
+           llh -= lp;
+           trs += actions.size();
+           //cerr << "start word:" << sii << corpus.intToWords[sentence[0]] << corpus.intToWords[sentence[1]] << endl;
+           std::vector<std::vector<string>> ref = compute_heads(sentence, actions);
+           std::vector<std::vector<string>> hyp = compute_heads(sentence, pred);
+           //output_conll(sentence, corpus.intToWords, ref, hyp);
+           //correct_heads += compute_correct(ref, hyp, sentence.size() - 1);
+           //total_heads += sentence.size() - 1;
+           refs.push_back(ref);
+           hyps.push_back(hyp);
+        }
+        map<string, double> results = evaluate(refs, hyps);
+        auto t_end = std::chrono::high_resolution_clock::now();
+        cerr << "  **dev (iter=" << iter << " epoch=" << (tot_seen / corpus.nsentences) << ")\tllh=" << llh 
+                << " ppl: " << exp(llh / trs) << " err: " << (trs - right) / trs << " LF: " << results["LF"] << " UF:" << results["UF"] 
+                << " LP:" << results["LP"] << " LR:" << results["LR"] << " UP:" << results["UP"] << " UR:" <<results["UR"]
+                << "\t[" << dev_size << " sents in " << std::chrono::duration<double, std::milli>(t_end-t_start).count() << " ms]" << endl;
+        if (results["LF"] > best_LF) {
+          cerr << "---saving model to " << fname << "---" << endl;
+          best_LF = results["LF"];
+          ofstream out(fname);
+          boost::archive::text_oarchive oa(out);
+          oa << model;
+          // Create a soft link to the most recent model in order to make it
+          // easier to refer to it in a shell script.
+          if (!softlinkCreated) {
+            string softlink = " latest_model";
+            if (system((string("rm -f ") + softlink).c_str()) == 0 && 
+                system((string("ln -s ") + fname + softlink).c_str()) == 0) {
+              cerr << "Created " << softlink << " as a soft link to " << fname 
+                   << " for convenience." << endl;
+            }
+            softlinkCreated = true;
+          }
+        }
+      }
+    }//while
 }
 
 void LSTMParser::predict_dev() {
