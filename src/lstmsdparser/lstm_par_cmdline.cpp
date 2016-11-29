@@ -49,11 +49,11 @@ void output_conll(std::vector<std::string> words, std::vector<std::string> posta
       for (int j = 0; j < hyp[i].size(); j++){
         if (hyp[i][j] != "-NULL-"){
           full = str + std::to_string(j+1) + "\t" + hyp[i][j] + "\t_\t_";
-          std::cerr << full << std::endl;
+          std::cout << full << std::endl;
         }
       }
     }
-    std::cerr << std::endl;
+    std::cout << std::endl;
 }
 
 int main(int argc, char * argv[]) {
