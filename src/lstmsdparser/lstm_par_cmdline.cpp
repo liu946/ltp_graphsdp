@@ -99,6 +99,7 @@ int main(int argc, char * argv[]) {
     std::cerr << "fail to init parser" << std::endl;
     return -1;
   }
+  std::cerr << "finish loading model" << std::endl;
 
   std::ifstream ifs(input.c_str());
 
