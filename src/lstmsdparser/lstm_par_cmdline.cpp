@@ -2,6 +2,8 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <time.h>
+#include <chrono>
 
 #include "boost/program_options.hpp"
 #include "config.h"
@@ -101,9 +103,13 @@ int main(int argc, char * argv[]) {
   std::ifstream ifs(input.c_str());
 
   std::string sentence = "";
+
+  auto t_start = std::chrono::high_resolution_clock::now();
+  int num = 0;
   while (!ifs.eof()) {
       std::getline(ifs, sentence,'\n');
       if (!sentence.length()) break;
+      num ++;
       std::vector<std::string> sent;
       split(sentence, "\t", sent);
       std::vector<std::string> words;
@@ -117,6 +123,11 @@ int main(int argc, char * argv[]) {
       lstmsdparser_parse(engine, words, postags, hyp);
       output_conll(words, postags, hyp);
   }
+
+  auto t_end = std::chrono::high_resolution_clock::now();
+
+  std::cerr << "Processed " << num << " sents in " << std::chrono::duration<double, std::milli>(t_end-t_start).count() 
+              << " ms]" << std::endl;
 
 /*
   std::vector<std::vector<std::string>> hyp;
