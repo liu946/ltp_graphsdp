@@ -143,8 +143,21 @@ bool LSTMParser::has_path_to(int w1, int w2, const vector<bool>  dir_graph []){
     return false;
 }
 
- bool LSTMParser::IsActionForbidden(const string& a, unsigned bsize, unsigned ssize, unsigned root, const vector<bool>  dir_graph [], 
-                                                const vector<int>& stacki, const vector<int>& bufferi) {
+bool LSTMParser::has_path_to(int w1, int w2, const vector<vector<string>>& graph){
+    //cerr << endl << w1 << " has path to " << w2 << endl;
+    if (graph[w1][w2] != REL_NULL)
+        return true;
+    for (int i = 0; i < (int)graph.size(); ++i){
+        if (graph[w1][i] != REL_NULL)
+            if (has_path_to(i, w2, graph))
+                return true;
+    }
+    return false;
+}
+
+ bool LSTMParser::IsActionForbidden(const string& a, unsigned bsize, unsigned ssize, 
+                                      unsigned root, const vector<vector<string>> dir_graph, //const vector<bool>  dir_graph [], 
+                                      const vector<int>& stacki, const vector<int>& bufferi) {
     if (transition_system == "list"){
         //cerr << a << endl;
         int s0 = stacki.back();
@@ -152,11 +165,11 @@ bool LSTMParser::has_path_to(int w1, int w2, const vector<bool>  dir_graph []){
         int root_num = 0;
         int s0_head_num = 0;
         for (int i = 0; i < (int)dir_graph[root].size(); ++i)
-            if (dir_graph[root][i])
+            if (dir_graph[root][i] != REL_NULL)
                 root_num ++;
         if (s0 >= 0)
             for (int i = 0; i < (int)dir_graph[root].size(); ++i)
-                if (dir_graph[i][s0])
+                if (dir_graph[i][s0] != REL_NULL)
                     s0_head_num ++;
         if (a[0] == 'L'){
             string rel = a.substr(3, a.size() - 4);
@@ -186,11 +199,11 @@ bool LSTMParser::has_path_to(int w1, int w2, const vector<bool>  dir_graph []){
         int root_num = 0;
         int s0_head_num = 0;
         for (int i = 0; i < (int)dir_graph[root].size(); ++i)
-            if (dir_graph[root][i])
+            if (dir_graph[root][i] != REL_NULL)
                 root_num ++;
         if (s0 >= 0)
             for (int i = 0; i < (int)dir_graph[root].size(); ++i)
-                if (dir_graph[i][s0])
+                if (dir_graph[i][s0] != REL_NULL)
                     s0_head_num ++;
         if (a[0] == 'L'){
             string rel = a.substr(3, a.size() - 4);
@@ -461,13 +474,14 @@ vector<unsigned> LSTMParser::log_prob_parser(ComputationGraph* hg,
     unsigned action_count = 0;  // incremented at each prediction
 
     //init graph connecting vector
-    vector<bool> dir_graph[sent.size()]; // store the connection between words in sent
-    vector<bool> v;
+    //vector<bool> dir_graph[sent.size()]; // store the connection between words in sent
+    vector<vector<string>> dir_graph;
+    vector<string> v;
     for (int i = 0; i < (int)sent.size(); i++){
-        v.push_back(false);
+        v.push_back(REL_NULL);
     }
     for (int i = 0; i < (int)sent.size(); i++){
-        dir_graph[i] = v;
+        dir_graph.push_back(v);
     }
     //remove stack.size() > 2 ||
     while( buffer.size() > 1) {
@@ -600,7 +614,8 @@ vector<unsigned> LSTMParser::log_prob_parser(ComputationGraph* hg,
                 headi = bufferi.back();
                 buffer.pop_back();
                 bufferi.pop_back();
-                dir_graph[headi][depi] = true; // add this arc to graph
+                //dir_graph[headi][depi] = true; // add this arc to graph
+                dir_graph[headi][depi] = REL_EXIST;
                 if (headi == sent.size() - 1) rootword = intToWords.find(sent[depi])->second;
                 Expression composed = affine_transform({cbias, H, head, D, dep, R, relation});
                 Expression nlcomposed = tanh(composed);
@@ -631,7 +646,8 @@ vector<unsigned> LSTMParser::log_prob_parser(ComputationGraph* hg,
                 headi = stacki.back();
                 stack.pop_back();
                 stacki.pop_back();
-                dir_graph[headi][depi] = true; // add this arc to graph
+                //dir_graph[headi][depi] = true; // add this arc to graph
+                dir_graph[headi][depi] = REL_EXIST;
                 if (headi == sent.size() - 1) rootword = intToWords.find(sent[depi])->second;
                 Expression composed = affine_transform({cbias, H, head, D, dep, R, relation});
                 Expression nlcomposed = tanh(composed);
@@ -704,7 +720,8 @@ vector<unsigned> LSTMParser::log_prob_parser(ComputationGraph* hg,
                 headi = bufferi.back();
                 buffer.pop_back();
                 bufferi.pop_back();
-                dir_graph[headi][depi] = true; // add this arc to graph
+                //dir_graph[headi][depi] = true; // add this arc to graph
+                dir_graph[headi][depi] = REL_EXIST;
                 if (headi == sent.size() - 1) rootword = intToWords.find(sent[depi])->second;
                 Expression composed = affine_transform({cbias, H, head, D, dep, R, relation});
                 Expression nlcomposed = tanh(composed);
@@ -735,7 +752,8 @@ vector<unsigned> LSTMParser::log_prob_parser(ComputationGraph* hg,
                 headi = stacki.back();
                 stack.pop_back();
                 stacki.pop_back();
-                dir_graph[headi][depi] = true; // add this arc to graph
+                //dir_graph[headi][depi] = true; // add this arc to graph
+                dir_graph[headi][depi] = REL_EXIST;
                 if (headi == sent.size() - 1) rootword = intToWords.find(sent[depi])->second;
                 Expression composed = affine_transform({cbias, H, head, D, dep, R, relation});
                 Expression nlcomposed = tanh(composed);
@@ -790,13 +808,16 @@ vector<unsigned> LSTMParser::log_prob_parser(ComputationGraph* hg,
                                     int dir, double *score, string *rel) {
     char prefix = (dir > 0 ? 'L' : 'R');
     //init graph connecting vector
-    vector<bool> dir_graph[sent_size]; // store the connection between words in sent
-    vector<bool> v;
+    //vector<bool> dir_graph[sent_size]; // store the connection between words in sent
+    vector<vector<string>> dir_graph;
+    //vector<bool> v;
+    vector<string> v;
     for (int i = 0; i < sent_size; i++){
-        v.push_back(false);
+        //v.push_back(false);
+        v.push_back(REL_NULL);
     }
     for (int i = 0; i < sent_size; i++){
-        dir_graph[i] = v;
+        dir_graph.push_back(v);
     }
     stack_lstm.new_graph(*hg);
     buffer_lstm.new_graph(*hg);
@@ -911,18 +932,6 @@ vector<unsigned> LSTMParser::log_prob_parser(ComputationGraph* hg,
     *score = second_score;
     *rel = second_a;
   }
-
-bool LSTMParser::has_path_to(int w1, int w2, const vector<vector<string>>& graph){
-    //cerr << endl << w1 << " has path to " << w2 << endl;
-    if (graph[w1][w2] != REL_NULL)
-        return true;
-    for (int i = 0; i < (int)graph.size(); ++i){
-        if (graph[w1][i] != REL_NULL)
-            if (has_path_to(i, w2, graph))
-                return true;
-    }
-    return false;
-}
 
 int LSTMParser::process_headless(vector<vector<string>>& hyp, vector<vector<string>>& cand, vector<Expression>& word_rep, 
                                     Expression& act_rep, const vector<unsigned>& sent, const vector<unsigned>& sentPos){
