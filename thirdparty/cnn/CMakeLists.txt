@@ -29,11 +29,11 @@ function(find_cudnn)
 endfunction()
 
 # look for Boost
-set(Boost_REALPATH ON)
+#set(Boost_REALPATH ON)
+##find_package(Boost COMPONENTS program_options serialization REQUIRED)
 #find_package(Boost COMPONENTS program_options serialization REQUIRED)
-find_package(Boost COMPONENTS program_options serialization REQUIRED)
-include_directories(${Boost_INCLUDE_DIR})
-set(LIBS ${LIBS} ${Boost_LIBRARIES})
+#include_directories(${Boost_INCLUDE_DIR})
+#set(LIBS ${LIBS} ${Boost_LIBRARIES})
 
 if(BACKEND)
   message("-- BACKEND: ${BACKEND}")
@@ -61,11 +61,12 @@ if (WITH_CUDA_BACKEND)
 endif()
 
 # look for Eigen
-find_package(Eigen3 REQUIRED)
+#find_package(Eigen3 REQUIRED)
+set(EIGEN3_INCLUDE_DIR ${THIRDPARTY_DIR}/eigen-3.2.10)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 add_subdirectory(cnn)
-add_subdirectory(examples)
+#add_subdirectory(examples)

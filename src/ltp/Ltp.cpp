@@ -32,7 +32,9 @@ LTP::LTP(const std::string& last_stage,
     const std::string& postagger_lexicon_file,
     const std::string& ner_model_file,
     const std::string& parser_model_file,
+#ifdef USESDPTREE
 	  const std::string& semantic_parser_model_file,
+#endif
     const std::string& srl_model_dir,
     const std::string& lstm_semantic_parser_dir)
   : _resource(), _loaded(false) {
@@ -41,7 +43,9 @@ LTP::LTP(const std::string& last_stage,
       postagger_model_file, postagger_lexicon_file,
       ner_model_file,
       parser_model_file,
-	    semantic_parser_model_file,
+#ifdef USESDPTREE
+			semantic_parser_model_file,
+#endif
       srl_model_dir,
       lstm_semantic_parser_dir);
 }
@@ -53,7 +57,9 @@ bool LTP::load(const std::string& last_stage,
     const std::string& postagger_lexicon_file,
     const std::string& ner_model_file,
     const std::string& parser_model_file,
+#ifdef USESDPTREE
 	  const std::string& semantic_parser_model_file,
+#endif
     const std::string& srl_model_dir,
     const std::string& lstm_semantic_parser_dir) {
 
@@ -67,8 +73,11 @@ bool LTP::load(const std::string& last_stage,
   } else if (last_stage == LTP_SERVICE_NAME_DEPPARSE) {
     target_mask = (kActiveSegmentor|kActivePostagger|kActiveParser);
   } else if (last_stage == LTP_SERVICE_NAME_SEMDEPPARSE) {
-    target_mask = (kActiveSegmentor|kActivePostagger|kActiveSemanticParser);
-  } else if ((last_stage == LTP_SERVICE_NAME_SRL) || (last_stage == "all")) {
+    target_mask = (kActiveSegmentor | kActivePostagger | kActiveSemanticParser);
+  } else if (last_stage == LTP_SERVICE_NAME_SRL) {
+    target_mask =
+        (kActiveSegmentor|kActivePostagger|kActiveNER|kActiveParser|kActiveSRL);
+  } else if (last_stage == "all") {
     target_mask =
       (kActiveSegmentor|kActivePostagger|kActiveNER|kActiveParser|
        kActiveSemanticParser|kActiveSRL);
@@ -121,10 +130,12 @@ bool LTP::load(const std::string& last_stage,
   }
    
   if (target_mask & kActiveSemanticParser) {
+#ifdef USESDPTREE
     if (0 != _resource.LoadSemanticParserResource(semantic_parser_model_file)) {
       ERROR_LOG("in LTP::semantic_parser, failed to load semantic parser resource");
       return false;
     }
+#endif
     if (0 != _resource.LoadLSTMSemanticParserResource(lstm_semantic_parser_dir)) {
       ERROR_LOG("in LTP::lstm_semantic_parser, failed to load lstm semantic parser resource");
       return false;

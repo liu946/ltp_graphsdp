@@ -55,8 +55,8 @@ public:
    std::map<unsigned, std::string> intToChars;
 
    // String literals
-   static constexpr const char* UNK = "UNK";
-   static constexpr const char* BAD0 = "<BAD0>";
+   static const char* UNK;
+   static const char* BAD0;
 
 /*  std::map<unsigned,unsigned>* headsTraining;
   std::map<unsigned,std::string>* labelsTraining;
@@ -443,6 +443,7 @@ void ReplaceStringInPlace(std::string& subject, const std::string& search,
   std::vector<std::string> words_;
   Map d_;*/
 };
+
 
 /*void ReadFromFile(const std::string& filename,
                   Corpus* d,
