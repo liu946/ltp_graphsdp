@@ -230,6 +230,8 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
+  INFO_LOG("Start listening...");
+
   // getchar();
   while (exit_flag == 0) {
     sleep(100000);
