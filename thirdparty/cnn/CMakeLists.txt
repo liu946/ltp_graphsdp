@@ -34,6 +34,7 @@ endfunction()
 #find_package(Boost COMPONENTS program_options serialization REQUIRED)
 #include_directories(${Boost_INCLUDE_DIR})
 #set(LIBS ${LIBS} ${Boost_LIBRARIES})
+include_directories (${THIRDPARTY_DIR}/boost/include)
 
 if(BACKEND)
   message("-- BACKEND: ${BACKEND}")
