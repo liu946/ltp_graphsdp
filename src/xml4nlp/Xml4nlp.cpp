@@ -791,6 +791,7 @@ int XML4NLP::GetSemanticParsesFromSentence(std::vector< std::pair<int, std::stri
   return 0;
 }
 */
+
 /*
 int XML4NLP::SetSemanticParsesToSentence(const std::vector< std::pair<int, std::string> > & relation,
                                  int pid, int sid) {
@@ -876,9 +877,9 @@ int XML4NLP::SetLSTMSemanticParsesToSentence(const std::vector<std::vector<std::
       if (vecSemResult[i][idx] != "-NULL-"){
         TiXmlElement *semPtr = new TiXmlElement(TAG_SEM);
         semPtr->SetAttribute(TAG_ID, head_num ++);
-	if (vecSemResult[i][idx] == "Root")
-	  semPtr->SetAttribute(TAG_PSR_PARENT, -1);
-	else
+        if (vecSemResult[i][idx] == "Root")
+          semPtr->SetAttribute(TAG_PSR_PARENT, -1);
+        else
           semPtr->SetAttribute(TAG_PSR_PARENT, idx);
         semPtr->SetAttribute(TAG_PSR_RELATE, vecSemResult[i][idx].c_str());
         wordPtr->LinkEndChild(semPtr);
@@ -893,6 +894,56 @@ int XML4NLP::SetLSTMSemanticParsesToSentence(const std::vector<std::vector<std::
   int pid, sid;
   if (0 != DecodeGlobalId(global_sid, pid, sid)) return -1;
   return SetLSTMSemanticParsesToSentence(vecSemResult, pid, sid);
+}
+
+int XML4NLP::GetLSTMSemanticParsesFromSentence(int pid,
+                                               int sid,
+                                               int wid,
+                                               std::vector<int> &vecParent,
+                                               std::vector<const char *> &vecRelate) const {
+  if (0 != CheckRange(pid, sid, wid)) return -1;
+
+  int nr_words = CountWordInSentence(pid, sid);
+
+  TiXmlElement *wordPtr = document.paragraphs[pid].sentences[sid].words[wid].wordPtr;
+  TiXmlElement *semPtr = wordPtr->FirstChildElement(TAG_SEM);
+
+  if (semPtr == NULL) {
+    /*
+    std::cerr << "\""
+              << TAG_SEM
+              << "\" does not exists in word "
+              << wid
+              << " of sentence "
+              << sid
+              << " of paragraph "
+              << pid << std::endl;
+    */
+    return -1;
+  }
+
+  do {
+    const char * cszRelate = semPtr->Attribute(TAG_PSR_RELATE);
+    const char * cszParent = semPtr->Attribute(TAG_PSR_PARENT);
+    vecRelate.push_back(cszRelate);
+    vecParent.push_back(static_cast<int>(atoi(cszParent)));
+    semPtr = semPtr -> NextSiblingElement(TAG_SEM);
+  } while(semPtr != NULL);
+
+  return 0;
+}
+
+int XML4NLP::GetLSTMSemanticParsesFromSentence(int pid,
+                                               int sid,
+                                               int wid,
+                                               std::vector<int> &vecParent,
+                                               std::vector<std::string> &vecRelate) const {
+  std::vector<const char*> vecRelate2;
+  int ret = GetLSTMSemanticParsesFromSentence(pid, sid, wid, vecParent, vecRelate2);
+  if (0 != ret) { return ret; }
+  vecRelate.resize(vecRelate2.size());
+  for (int i = 0; i < vecRelate2.size(); ++i) { vecRelate[i] = vecRelate2[i]; }
+  return 0;
 }
 
 // for semantic parser
@@ -1014,6 +1065,7 @@ int XML4NLP::GetPredArgToWord(int pid,
   TiXmlElement *argPtr = wordPtr->FirstChildElement(TAG_SRL_ARG);
 
   if (argPtr == NULL) {
+    /*
     std::cerr << "\""
               << TAG_SRL_ARG
               << "\" does not exists in word "
@@ -1022,9 +1074,11 @@ int XML4NLP::GetPredArgToWord(int pid,
               << sid
               << " of paragraph "
               << pid << std::endl;
+    */
     return -1;
   }
 
+  /*
   if (role.size() != range.size()) {
     std::cerr << "role's size() != range.size(), should resize() first." << std::endl;
     return -1;
@@ -1060,6 +1114,19 @@ int XML4NLP::GetPredArgToWord(int pid,
 
     return -1;
   }
+   */
+
+  do {
+    const char *cszType = argPtr->Attribute(TAG_SRL_TYPE);
+    const char *cszBeg = argPtr->Attribute(TAG_BEGIN);
+    const char *cszEnd = argPtr->Attribute(TAG_END);
+    role.push_back(cszType);
+    int uiBeg = static_cast<int>(cszBeg != NULL ? atoi(cszBeg) : 0);
+    int uiEnd = static_cast<int>(cszEnd != NULL ? atoi(cszEnd) : 0);
+    range.push_back(std::make_pair(uiBeg, uiEnd));
+
+    argPtr = argPtr->NextSiblingElement(TAG_SRL_ARG);
+  } while (argPtr != NULL);
 
   return 0;
 }

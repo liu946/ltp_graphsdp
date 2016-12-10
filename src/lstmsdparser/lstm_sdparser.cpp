@@ -1,4 +1,5 @@
 #include "lstmsdparser/lstm_sdparser.h"
+#include "lstmsdparser/c2.h"
 
 namespace ltp {
 namespace lstmsdparser {

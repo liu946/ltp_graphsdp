@@ -46,13 +46,17 @@ void multithreaded_ltp( void * args) {
     } else if(type == LTP_SERVICE_NAME_DEPPARSE) {
       engine->parser(xml4nlp);
     } else if(type == LTP_SERVICE_NAME_SEMDEPPARSE) {
+#ifdef USESDPTREE
       engine->semantic_parser(xml4nlp);
+#endif
       engine->lstm_semantic_parser(xml4nlp);
     } else if(type == LTP_SERVICE_NAME_SRL) {
       engine->srl(xml4nlp);
     } else {
       engine->srl(xml4nlp);
+#ifdef USESDPTREE
       engine->semantic_parser(xml4nlp);
+#endif
       engine->lstm_semantic_parser(xml4nlp);
     }
 
@@ -101,8 +105,10 @@ int main(int argc, char *argv[]) {
     ("semparser-data", value<std::string>(),
      "The path to the lstm semantic parser model directory [default=ltp_data/semparser/].")
 
+#ifdef USESDPTREE
     ("semparser-model", value<std::string>(),
      "The path to the original semantic parser model file [default=ltp_data/semparser.model].")
+#endif
 
     ("srl-data", value<std::string>(),
      "The path to the SRL model directory [default=ltp_data/srl_data/].")
@@ -185,10 +191,12 @@ int main(int argc, char *argv[]) {
     lstm_semparser_data= vm["semparser-data"].as<std::string>();
   }
 
+#ifdef USESDPTREE
   std::string semparser_model = "ltp_data/semparser.model";
   if (vm.count("semparser-model")) {
     semparser_model= vm["semparser-model"].as<std::string>();
   }
+#endif
 
   std::string srl_data= "ltp_data/srl/";
   if (vm.count("srl-data")) {
@@ -196,8 +204,12 @@ int main(int argc, char *argv[]) {
   }
   
   LTP engine(last_stage, segmentor_model, segmentor_lexicon, postagger_model,
-      postagger_lexcion, ner_model, parser_model, semparser_model, srl_data, 
-      lstm_semparser_data);
+      postagger_lexcion, ner_model, parser_model,
+#ifdef USESDPTREE
+             semparser_model,
+#endif
+             srl_data,
+             lstm_semparser_data);
 
   if (!engine.loaded()) {
     std::cerr << "Failed to load LTP" << std::endl;

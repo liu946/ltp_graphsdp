@@ -5,13 +5,13 @@ include_directories (./
     ${THIRDPARTY_DIR}/tinyxml/)
 
 # look for Boost
-if(DEFINED ENV{BOOST_ROOT})
-  set(Boost_NO_SYSTEM_PATHS ON)
-endif()
-set(Boost_REALPATH ON)
-find_package(Boost COMPONENTS program_options serialization REQUIRED)
-include_directories(${Boost_INCLUDE_DIR})
-set(LIBS ${LIBS} ${Boost_LIBRARIES})
+#if(DEFINED ENV{BOOST_ROOT})
+#  set(Boost_NO_SYSTEM_PATHS ON)
+#endif()
+#set(Boost_REALPATH ON)
+#find_package(Boost COMPONENTS program_options serialization REQUIRED)
+#include_directories(${Boost_INCLUDE_DIR})
+#set(LIBS ${LIBS} ${Boost_LIBRARIES})
 
 set (ltp_server_SRC ltp_server.cpp mongoose.c mongoose.h)
 link_directories ( ${LIBRARY_OUTPUT_PATH} )
@@ -30,6 +30,7 @@ target_link_libraries (ltp_server
     pthread
     boost_program_options_static_lib
     boost_regex_static_lib
-    ${Boost_LIBRARIES}
+    boost_serialization_static_lib
     dl
-    cnn)
+    cnn
+    jsoncpp)

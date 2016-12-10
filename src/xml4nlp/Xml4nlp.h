@@ -628,9 +628,9 @@ public:
       const vector<string> &vecRel,
       int sentenceIdx);
 	  
-  // for Semantic Parser
-  /*
+  // for Semantic Parser (tree)
   //not used
+  /*
   int GetSemanticParsesFromSentence(vector< pair<int, const char *> > &vecParse,
       int paragraphIdx,
       int sentenceIdx) const;
@@ -643,7 +643,8 @@ public:
       int sentenceIdx) const;
 
   int GetSemanticParsesFromSentence(vector< pair<int, string> > &vecParse,
-      int sentenceIdx) const;*/
+      int sentenceIdx) const;
+   */
 
 /*
   //not used
@@ -661,6 +662,18 @@ public:
 
   int SetLSTMSemanticParsesToSentence(const std::vector<std::vector<std::string>> & vecSemResult,
       int sentenceIdx);
+
+  int GetLSTMSemanticParsesFromSentence(int paragraphIdx,
+                                        int sentenceIdx,
+                                        int wordIdx,
+                                        std::vector<int> &vecParent,
+                                        std::vector<const char *> &vecRelate) const;
+
+  int GetLSTMSemanticParsesFromSentence(int paragraphIdx,
+                                        int sentenceIdx,
+                                        int wordIdx,
+                                        std::vector<int> &vecParent,
+                                        std::vector<std::string> &vecRelate) const;
 
   // for semantic parser
   int SetSemanticParsesToSentence(const vector<int> &vecHead,

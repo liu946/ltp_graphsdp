@@ -20,6 +20,7 @@
 #define LTP_SERVICE_NAME_DEPPARSE "dp"
 #define LTP_SERVICE_NAME_SEMDEPPARSE "sdp"
 #define LTP_SERVICE_NAME_SRL      "srl"
+#define LTP_SERVICE_NAME_ALL      "all"
 
 enum ErrorCodes {
   kEmptyStringError = 1,  /*< The input sentence is empty */
@@ -54,7 +55,9 @@ public:
   const std::string& postagger_lexicon_file,
   const std::string& ner_model_file,
   const std::string& parser_model_file,
-  const std::string& semantic_parser_dir,
+#ifdef USESDPTREE
+  const std::string& semantic_parser_model_file,
+#endif
   const std::string& srl_model_dir,
   const std::string& lstm_semantic_parser_dir);
 
@@ -144,7 +147,9 @@ private:
        const std::string& postagger_lexicon_file,
        const std::string& ner_model_file,
        const std::string& parser_model_file,
+#ifdef USESDPTREE
 	     const std::string& semantic_parser_dir,
+#endif
        const std::string& srl_model_dir,
        const std::string& lstm_semantic_parser_dir);
 
