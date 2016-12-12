@@ -156,6 +156,8 @@ bool LTP::load(const std::string& last_stage,
     return false;
   }
 
+  INFO_LOG("Resources loading finished.");
+
   return true;
 }
 

@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
      "- " LTP_SERVICE_NAME_POSTAG ": Part of speech tagging\n"
      "- " LTP_SERVICE_NAME_NER ": Named entity recognization\n"
      "- " LTP_SERVICE_NAME_DEPPARSE ": Dependency parsing\n"
-     "- " LTP_SERVICE_NAME_SRL ": Semantic role labeling (equals to all)\n"
+     "- " LTP_SERVICE_NAME_SRL ": Semantic role labeling\n"
      "- " LTP_SERVICE_NAME_SEMDEPPARSE ": Semantic dependency parsing\n"
      "- all: The whole pipeline [default]")
     ("input", value<std::string>(), "The path to the input file.")
