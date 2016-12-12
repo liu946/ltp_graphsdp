@@ -2,7 +2,8 @@ include_directories (./
     ${SOURCE_DIR}/
     ${THIRDPARTY_DIR}/boost/include/
     ${THIRDPARTY_DIR}/maxent/
-    ${THIRDPARTY_DIR}/tinyxml/)
+    ${THIRDPARTY_DIR}/tinyxml/
+    ${THIRDPARTY_DIR}/jsoncpp/include)
 
 # look for Boost
 #if(DEFINED ENV{BOOST_ROOT})
