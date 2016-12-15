@@ -2,7 +2,6 @@ add_subdirectory (boost)
 add_subdirectory (maxent)
 add_subdirectory (tinyxml)
 add_subdirectory (cnn)
-add_subdirectory (eigen-3.2.10)
 add_subdirectory (jsoncpp)
 
 if (UNIX)
