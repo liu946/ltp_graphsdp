@@ -46,4 +46,9 @@ LSTMSDPARSER_DLL_API int lstmsdparser_parse(void * parser,
                  const std::vector<std::string> & postags,
                  std::vector<std::vector<std::string>> & hyp);
 
+LSTMSDPARSER_DLL_API int lstmsdparser_parse(void * parser,
+                                            const std::vector<std::string> & words,
+                                            const std::vector<std::string> & postags,
+                                            std::vector<std::vector<std::pair<int, std::string>>> & hyp);
+
 #endif  //  end for __LTP_LSTMSDPARSER_DLL_H__
