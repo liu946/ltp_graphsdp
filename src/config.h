@@ -6,6 +6,8 @@
 
 #define BOOST_ALL_NO_LIB
 
+#define USESDPTREE
+
 namespace ltp {
 
 const double EPS = 1e-8;
