@@ -88,3 +88,29 @@ int lstmsdparser_parse(void * parser,
   wrapper = reinterpret_cast<__ltp_dll_lstmsdparser_wrapper*>(parser);
   return wrapper->parse(words, postags, hyp);
 }
+
+int lstmsdparser_parse(void * parser,
+                       const std::vector<std::string> & words,
+                       const std::vector<std::string> & postags,
+                       std::vector<std::vector<std::pair<int, std::string>>> & hyp) {
+  std::vector<std::vector<std::string>> vecSemResult;
+  int ret = lstmsdparser_parse(parser, words, postags, vecSemResult);
+  if (ret <= 0) {
+    return -1;
+  }
+
+  for (int i = 0; i < words.size(); ++ i) {
+    std::vector<std::pair<int, std::string>> wordSemResult;
+    for (int idx = 0; idx < vecSemResult.size() + 1; ++ idx) {
+      if (vecSemResult[i][idx] != "-NULL-"){
+        if (vecSemResult[i][idx] == "Root")
+          wordSemResult.push_back(std::make_pair(-1, std::string("Root")));
+        else
+          wordSemResult.push_back(std::make_pair(idx, vecSemResult[i][idx]));
+      }
+    }
+    hyp.push_back(std::move(wordSemResult));
+  }
+
+  return ret;
+}
