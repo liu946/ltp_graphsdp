@@ -119,11 +119,11 @@ public:
 
   void get_dynamic_infos();
 
-  bool has_path_to(int w1, int w2, const std::vector<bool>  dir_graph []);
+  bool has_path_to(int w1, int w2, const std::vector<std::vector<bool>>& graph);
 
   bool has_path_to(int w1, int w2, const std::vector<std::vector<string>>& graph);
 
-  bool IsActionForbidden(const string& a, unsigned bsize, unsigned ssize, unsigned root, const std::vector<std::vector<std::string>> dir_graph,//const std::vector<bool>  dir_graph [], 
+  bool IsActionForbidden(const string& a, unsigned bsize, unsigned ssize, unsigned root, const std::vector<std::vector<bool>> dir_graph,//const std::vector<bool>  dir_graph [], 
                                                 const std::vector<int>& stacki, const std::vector<int>& bufferi);
   std::vector<std::vector<string>> compute_heads(const std::vector<unsigned>& sent, const std::vector<unsigned>& actions);
   std::vector<unsigned> log_prob_parser(ComputationGraph* hg,
