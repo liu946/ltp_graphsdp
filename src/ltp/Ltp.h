@@ -2,6 +2,7 @@
 #define __LTP_H__
 
 #include "LTPResource.h"
+#include "config.h"
 #include "xml4nlp/Xml4nlp.h"
 #include <iostream>
 #include <string>
