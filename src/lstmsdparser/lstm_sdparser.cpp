@@ -19,33 +19,94 @@ void LSTMParser::set_options(Options opts){
   this->Opt = opts;
 }
 
-bool LSTMParser::load(string model_file, string training_data_file, string word_embedding_file,
-                        string dev_data_file){
+bool LSTMParser::save_model(string model_file){
+  std::ofstream out(model_file.c_str());
+  boost::archive::binary_oarchive oa(out);
+  oa << corpus.nwords;
+  oa << corpus.nactions;
+  oa << corpus.npos;
+
+  oa << corpus.max;
+  oa << corpus.maxPos;
+
+  oa << corpus.wordsToInt;
+  oa << corpus.intToWords;
+  oa << corpus.actions;
+
+  oa << corpus.posToInt;
+  oa << corpus.intToPos;
+
+  oa << pretrained;
+  oa << training_vocab;
+
+  oa << model;
+
+  return true;
+}
+
+bool LSTMParser::load_model(string model_file, string dev_data_file){
+  time_t time_now = time(NULL);
+  std::string t_n(asctime(localtime(&time_now))); 
+  cerr << "[" << t_n.substr(0, t_n.size() - 1) << "] " 
+      << "Loading model from " << model_file << endl;
+
   this->transition_system = Opt.transition_system;
-  if (DEBUG)
-    cerr << "Loading training data from " << training_data_file << endl;
-  corpus.load_correct_actions(training_data_file);
+  std::ifstream in(model_file.c_str());
+  if (!in){
+    std::cerr << "### File does not exist! ###" << std::endl;
+  }
+  boost::archive::binary_iarchive ia(in); 
+  ia >> corpus.nwords;
+  ia >> corpus.nactions;
+  ia >> corpus.npos;
+
+  ia >> corpus.max;
+  ia >> corpus.maxPos;
+
+  ia >> corpus.wordsToInt;
+  ia >> corpus.intToWords;
+  ia >> corpus.actions;
+
+  ia >> corpus.posToInt;
+  ia >> corpus.intToPos;
+
+  ia >> pretrained;
+  ia >> training_vocab;
 
   kUNK = corpus.get_or_add_word(cpyp::Corpus::UNK);
 
-  pretrained[kUNK] = std::vector<float>(Opt.PRETRAINED_DIM, 0);
+  // from get_dynamic_infos
   if (DEBUG)
-    cerr << "Loading word embeddings from " << word_embedding_file << " with" << Opt.PRETRAINED_DIM << " dimensions\n";
-  ifstream in(word_embedding_file.c_str());
-  string line;
-  getline(in, line);
-  std::vector<float> v(Opt.PRETRAINED_DIM, 0);
-  string word;
-  while (getline(in, line)) {
-    istringstream lin(line);
-    lin >> word;
-    for (unsigned i = 0; i < Opt.PRETRAINED_DIM; ++i) lin >> v[i];
-    unsigned id = corpus.get_or_add_word(word);
-    pretrained[id] = v;
-  }
+    cerr << "Number of words: " << corpus.nwords 
+        << "\nNumber of POS: " << corpus.npos << endl;
+  System_size.VOCAB_SIZE = corpus.nwords + 1;
+  //ACTION_SIZE = corpus.nactions + 1;
+  System_size.ACTION_SIZE = corpus.nactions + 30; // leave places for new actions in test set
+  System_size.POS_SIZE = corpus.npos + 10;  // bad way of dealing with the fact that we may see new POS tags in the test set
+  possible_actions.resize(corpus.nactions);
+  for (unsigned i = 0; i < corpus.nactions; ++i)
+    possible_actions[i] = i;
 
-  get_dynamic_infos();
+  if (!setup_dynet()) cerr << "### fail in setting up dynet! ###" << endl;
+
+  // continue to load model
+  ia >> this->model;
   if (DEBUG)
+    cerr << "finish loading model" << endl;
+  
+  if (dev_data_file.length() > 0){
+    if (DEBUG)
+      cerr << "loading dev data from " << dev_data_file << endl;
+    //corpus.load_correct_actionsDev(dev_data_file);
+    corpus.load_conll_fileDev(dev_data_file);
+    if (DEBUG)
+      cerr << "finish loading dev data" << endl;
+  }
+  return true;
+}
+
+bool LSTMParser::setup_dynet(){
+	if (DEBUG)
     cerr << "Setup model in cnn" << endl;
   //allocate memory for cnn
   char ** k;
@@ -89,13 +150,43 @@ bool LSTMParser::load(string model_file, string training_data_file, string word_
     p_t = nullptr;
     p_t2l = nullptr;
   }
+  return true;
+}
 
+
+bool LSTMParser::load(string model_file, string training_data_file, string word_embedding_file,
+                        string dev_data_file){
+  this->transition_system = Opt.transition_system;
+  if (DEBUG)
+    cerr << "Loading training data from " << training_data_file << endl;
+  corpus.load_conll_file(training_data_file);
+
+  kUNK = corpus.get_or_add_word(cpyp::Corpus::UNK);
+
+  pretrained[kUNK] = std::vector<float>(Opt.PRETRAINED_DIM, 0);
+  if (DEBUG)
+    cerr << "Loading word embeddings from " << word_embedding_file << " with" << Opt.PRETRAINED_DIM << " dimensions\n";
+  ifstream in(word_embedding_file.c_str());
+  string line;
+  getline(in, line);
+  std::vector<float> v(Opt.PRETRAINED_DIM, 0);
+  string word;
+  while (getline(in, line)) {
+    istringstream lin(line);
+    lin >> word;
+    for (unsigned i = 0; i < Opt.PRETRAINED_DIM; ++i) lin >> v[i];
+    unsigned id = corpus.get_or_add_word(word);
+    pretrained[id] = v;
+  }
+
+  get_dynamic_infos();
+  if (!setup_dynet()) cerr << "### fail in setting up dynet! ###" << endl;
   //this->model = model;
   if (model_file.length() > 0) {
     if (DEBUG)
       cerr << "loading model from " << model_file << endl;
     ifstream in(model_file.c_str());
-    boost::archive::text_iarchive ia(in);
+    boost::archive::binary_iarchive ia(in);
     ia >> this->model;
     if (DEBUG)
       cerr << "finish loading model" << endl;
@@ -103,7 +194,7 @@ bool LSTMParser::load(string model_file, string training_data_file, string word_
   if (dev_data_file.length() > 0){
     if (DEBUG)
       cerr << "loading dev data from " << dev_data_file << endl;
-    corpus.load_correct_actionsDev(dev_data_file);
+    corpus.load_conll_fileDev(dev_data_file);
     if (DEBUG)
       cerr << "finish loading dev data" << endl;
   }
@@ -878,6 +969,7 @@ vector<unsigned> LSTMParser::log_prob_parser(ComputationGraph* hg,
     pass.push_back(parameter(*hg, p_pass_guard));
     pass_lstm.add_input(pass.back());
 
+    w =lookup(*hg, p_w, sent[s0]);
     args = {ib, w2l, w}; // learn embeddings
     if (Opt.USE_POS) { // learn POS tag?
         Expression p = lookup(*hg, p_p, sentPos[s0]);
@@ -1030,7 +1122,7 @@ void LSTMParser::train(const std::string fname, const unsigned unk_strategy,
     requested_stop = false;
     signal(SIGINT, signal_callback_handler);
     unsigned status_every_i_iterations = 100;
-    int best_LF = 0;
+    double best_LF = 0;
     bool softlinkCreated = false;
     SimpleSGDTrainer sgd(&model);
     sgd.eta_decay = 0.08;
@@ -1136,9 +1228,10 @@ void LSTMParser::train(const std::string fname, const unsigned unk_strategy,
         if (results["LF"] > best_LF) {
           cerr << "---saving model to " << fname << "---" << endl;
           best_LF = results["LF"];
-          ofstream out(fname);
-          boost::archive::text_oarchive oa(out);
-          oa << model;
+          save_model(fname);
+          //ofstream out(fname);
+          //boost::archive::binary_oarchive oa(out);
+          //oa << model;
           // Create a soft link to the most recent model in order to make it
           // easier to refer to it in a shell script.
           if (!softlinkCreated) {

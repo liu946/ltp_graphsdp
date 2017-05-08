@@ -46,10 +46,10 @@ void InitCommandLine(int argc, char** argv, po::variables_map* conf) {
     cerr << dcmdline_options << endl;
     exit(1);
   }
-  if (conf->count("training_data") == 0) {
+  /*if (conf->count("training_data") == 0) {
     cerr << "Please specify --traing_data (-T): this is required to determine the vocabulary mapping, even if the parser is used in prediction mode.\n";
     exit(1);
-  }
+  }*/
 }
 
 int main(int argc, char** argv) {
@@ -110,8 +110,9 @@ int main(int argc, char** argv) {
 
   parser->DEBUG = true;
   if (conf.count("model")){
-    parser -> load(conf["model"].as<string>(), conf["training_data"].as<string>(), 
-                  conf["words"].as<string>(), conf["dev_data"].as<string>() );
+    //parser -> load(conf["model"].as<string>(), conf["training_data"].as<string>(), 
+    //              conf["words"].as<string>(), conf["dev_data"].as<string>() );
+    parser -> load_model(conf["model"].as<string>(), conf["dev_data"].as<string>());
   }
   else{
     parser -> set_options(Opt);

@@ -7,8 +7,8 @@ include_directories (${SOURCE_DIR}/
 set (lstm_sdparser_VERSION "0.0.1")
 set (lstm_sdparser_SRC
     lstm_sdparser.cpp
-    c2.cpp
     c2.h
+    listbased.cc
     )
 
 # look for Boost

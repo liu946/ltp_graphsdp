@@ -15,7 +15,63 @@
 #include <string>
 #include <algorithm>
 
+#include "lstmsdparser/listbased.h"
+
 namespace cpyp {
+
+inline void split(const std::string& source, const char& sep, 
+    std::vector<std::string>& ret, int maxsplit=-1) {
+  std::string str(source);
+  int numsplit = 0;
+  int len = str.size();
+  size_t pos;
+  for (pos = 0; pos < str.size() && (str[pos] == sep); ++ pos);
+  str = str.substr(pos);
+
+  ret.clear();
+  while (str.size() > 0) {
+    pos = std::string::npos;
+
+    for (pos = 0; pos < str.size() && (str[pos] != sep); ++ pos);
+
+    if (pos == str.size()) {
+      pos = std::string::npos;
+    }
+
+    if (maxsplit >= 0 && numsplit < maxsplit) {
+      ret.push_back(str.substr(0, pos));
+      ++ numsplit;
+    } else if (maxsplit >= 0 && numsplit == maxsplit) {
+      ret.push_back(str);
+      ++ numsplit;
+    } else if (maxsplit == -1) {
+      ret.push_back(str.substr(0, pos));
+      ++ numsplit;
+    }
+
+    if (pos == std::string::npos) {
+      str = "";
+    } else {
+      for (; pos < str.size() && (str[pos] == sep); ++ pos);
+      str = str.substr(pos);
+    }
+  }
+}
+
+/**
+ * Return a list of words of string str, the word are separated by
+ * separator.
+ *
+ *  @param  str         std::string     the string
+ *  @param  sep         char            the separator
+ *  @param  maxsplit    std::string     the sep upperbound
+ *  @return             std::vector<std::string> the words
+ */
+inline std::vector<std::string> split(const std::string& source, const char& sep, int maxsplit = -1) {
+  std::vector<std::string> ret;
+  split(source, sep, ret, maxsplit);
+  return ret;
+}
 
 class Corpus {
  //typedef std::unordered_map<std::string, unsigned, std::hash<std::string> > Map;
@@ -34,6 +90,11 @@ public:
    std::map<int,std::vector<std::string>> sentencesStrDev;
    unsigned nsentencesDev;
 
+   std::map<int,std::vector<unsigned>> sentencesTest;
+   std::map<int,std::vector<unsigned>> sentencesPosTest;
+   std::map<int,std::vector<std::string>> sentencesStrTest;
+   unsigned nsentencesTest;
+
    unsigned nsentences;
    unsigned nwords;
    unsigned nactions;
@@ -51,13 +112,10 @@ public:
    std::map<std::string, unsigned> posToInt;
    std::map<unsigned, std::string> intToPos;
 
-   int maxChars;
-   std::map<std::string, unsigned> charsToInt;
-   std::map<unsigned, std::string> intToChars;
-
    // String literals
-   static const char* UNK;
-   static const char* BAD0;
+   static constexpr const char* UNK = "UNK";
+   static constexpr const char* BAD0 = "<BAD0>";
+   static constexpr const char* ROOT = "ROOT";
 
 /*  std::map<unsigned,unsigned>* headsTraining;
   std::map<unsigned,std::string>* labelsTraining;
@@ -71,7 +129,6 @@ public:
   Corpus() {
     max = 0;
     maxPos = 0;
-    maxChars=0; //Miguel
   }
 
 
@@ -85,8 +142,413 @@ inline unsigned UTF8Len(unsigned char x) {
   else return 0;
 }
 
+inline void load_conll_file(std::string file){
+  std::ifstream actionsFile(file);
+  //correct_act_sent=new vector<vector<unsigned>>();
+  if (!actionsFile){
+    std::cerr << "### File does not exist! ###" << std::endl;
+  }
+  std::string lineS;
+
+  int sentence=0;
+  wordsToInt[Corpus::BAD0] = 0;
+  intToWords[0] = Corpus::BAD0;
+  wordsToInt[Corpus::UNK] = 1; // unknown symbol
+  intToWords[1] = Corpus::UNK;
+  wordsToInt["ROOT"] = 2; // root
+  intToWords[2] = "ROOT";
+  posToInt["ROOT"] = 1; // root
+  intToPos[1] = "ROOT";
+  assert(max == 0);
+  assert(maxPos == 0);
+  max=3;
+  maxPos=2;
+  
+  std::vector<unsigned> current_sent;
+  std::vector<unsigned> current_sent_pos;
+  std::map<int, std::vector<std::pair<int, std::string>>> graph;
+  TransitionSystem* system;
+  system = new ListBased();
+  while (getline(actionsFile, lineS)){
+    //istringstream iss(line);
+    //string lineS;
+    //iss>>lineS;
+    ReplaceStringInPlace(lineS, "-RRB-", "_RRB_");
+    ReplaceStringInPlace(lineS, "-LRB-", "_LRB_");
+    if (lineS.empty()) {
+        /*for (int j = 0; j < graph.size(); ++j){
+        std::cerr << j << "\t" << intToWords[current_sent[j]] 
+        << "\t" << intToPos[current_sent_pos[j]]
+        << "\t" << graph[j].back().first << "\t" << graph[j].back().second << std::endl;
+      }*/
+      std::vector<std::string> gold_acts;
+      system->get_actions(graph, gold_acts);
+      bool found=false;
+      //std::cerr << std::endl;
+      for (auto g: gold_acts){
+        //std::cerr << g << std::endl;
+        int i = 0;
+        found=false;
+        for (auto a: actions) {
+          if (a==g) {
+            std::vector<unsigned> a=correct_act_sent[sentence];
+            a.push_back(i);
+            correct_act_sent[sentence]=a;
+            found=true;
+            break;
+          }
+          ++i;
+        }
+        if (!found) {
+          actions.push_back(g);
+          std::vector<unsigned> a=correct_act_sent[sentence];
+          a.push_back(actions.size()-1);
+          correct_act_sent[sentence]=a;
+        }
+      }
+      current_sent.push_back(wordsToInt[Corpus::ROOT]);
+      current_sent_pos.push_back(posToInt[Corpus::ROOT]);
+      sentences[sentence] = current_sent;
+      sentencesPos[sentence] = current_sent_pos;
+      sentence++;
+      nsentences = sentence;
+      
+      current_sent.clear();
+      current_sent_pos.clear();
+      graph.clear();
+    } else {
+      //stack and buffer, for now, leave it like this.
+      // one line in each sentence may look like:
+      // 5  American  american  ADJ JJ  Degree=Pos  6 amod  _ _
+      // read the every line
+      if (lineS[0] == '#') continue;
+      std::vector<std::string> items = split(lineS, '\t');
+      if (items[0].find('-') != std::string::npos) continue;
+      if (items[0].find('.') != std::string::npos) continue;
+      unsigned id = std::atoi(items[0].c_str()) - 1;
+      std::string word = items[1];
+      //std::string word = StrToLower(items[1]);
+      std::string pos = items[3];
+      unsigned head = std::atoi(items[6].c_str()) - 1;
+      std::string rel = items[7];
+      graph[id].push_back(std::make_pair(head, rel));
+      if (graph[id].size() > 1) continue;
+      // new POS tag
+      if (posToInt[pos] == 0) {
+        posToInt[pos] = maxPos;
+        intToPos[maxPos] = pos;
+        npos = maxPos;
+        maxPos++;
+      }
+      // new word
+      if (wordsToInt[word] == 0) {
+        wordsToInt[word] = max;
+        intToWords[max] = word;
+        nwords = max;
+        max++;
+      }
+      current_sent.push_back(wordsToInt[word]);
+      current_sent_pos.push_back(posToInt[pos]);
+    }
+  }
 
 
+  // Add the last sentence.
+  if (current_sent.size() > 0) {
+    std::vector<std::string> gold_acts;
+    system->get_actions(graph, gold_acts);
+    bool found=false;
+    for (auto g: gold_acts){
+      //std::cerr << g << std::endl;
+      int i = 0;
+      found=false;
+      for (auto a: actions) {
+        if (a==g) {
+          std::vector<unsigned> a=correct_act_sent[sentence];
+          a.push_back(i);
+          correct_act_sent[sentence]=a;
+          found=true;
+          break;
+        }
+        ++i;
+      }
+      if (!found) {
+        actions.push_back(g);
+        std::vector<unsigned> a=correct_act_sent[sentence];
+        a.push_back(actions.size()-1);
+        correct_act_sent[sentence]=a;
+      }
+    }
+    current_sent.push_back(wordsToInt[Corpus::ROOT]);
+    current_sent_pos.push_back(posToInt[Corpus::ROOT]);
+    sentences[sentence] = current_sent;
+    sentencesPos[sentence] = current_sent_pos;
+    sentence++;
+    nsentences = sentence;
+  }
+      
+  actionsFile.close();
+  if (DEBUG){
+    std::cerr<<"done"<<"\n";
+    for (auto a: actions)
+      std::cerr<<a<<"\n";
+  }
+  nactions=actions.size();
+  if (DEBUG){
+    std::cerr<<"nactions:"<<nactions<<"\n";
+    std::cerr<<"nwords:"<<nwords<<"\n";
+    for (unsigned i=0;i<npos;i++)
+      std::cerr<<i<<":"<<intToPos[i]<<"\n";
+  }
+  //nactions=actions.size();
+}
+
+inline void load_conll_fileDev(std::string file){
+  std::ifstream actionsFile(file);
+  //correct_act_sent=new vector<vector<unsigned>>();
+  if (!actionsFile){
+    std::cerr << "### File does not exist! ###" << std::endl;
+  }
+  std::string lineS;
+
+  assert(maxPos > 1);
+  assert(max > 3);
+  int sentence=0;
+  std::vector<unsigned> current_sent;
+  std::vector<unsigned> current_sent_pos;
+  std::vector<std::string> current_sent_str;
+  std::map<int, std::vector<std::pair<int, std::string>>> graph;
+  TransitionSystem* system;
+  system = new ListBased();
+  while (getline(actionsFile, lineS)){
+    //istringstream iss(line);
+    //string lineS;
+    //iss>>lineS;
+    ReplaceStringInPlace(lineS, "-RRB-", "_RRB_");
+    ReplaceStringInPlace(lineS, "-LRB-", "_LRB_");
+    if (lineS.empty()) {
+      std::vector<std::string> gold_acts;
+      system->get_actions(graph, gold_acts);
+      bool found=false;
+      for (auto g: gold_acts){
+        //std::cerr << g << std::endl;
+        auto actionIter = std::find(actions.begin(), actions.end(), g);
+        if (actionIter != actions.end()) {
+          unsigned actionIndex = std::distance(actions.begin(), actionIter);
+          correct_act_sentDev[sentence].push_back(actionIndex);
+        } else {
+          // new action
+          actions.push_back(g);
+          unsigned actionIndex = actions.size() - 1;
+          correct_act_sentDev[sentence].push_back(actionIndex);
+        }
+      }
+      current_sent.push_back(wordsToInt[Corpus::ROOT]);
+      current_sent_pos.push_back(posToInt[Corpus::ROOT]);
+      current_sent_str.push_back("");
+      sentencesDev[sentence] = current_sent;
+      sentencesPosDev[sentence] = current_sent_pos;
+      sentencesStrDev[sentence] = current_sent_str; 
+      sentence++;
+      nsentencesDev = sentence;
+
+      /*if (is_tree) std::cerr << "is tree" << std::endl;
+      for (int j = 0; j < graph.size(); ++j){
+        std::cerr << j << "\t" << intToWords[current_sent[j]] << "\t" << intToPos[current_sent_pos[j]]
+        << "\t" << graph[j].back().first << "\t" << graph[j].back().second << std::endl;
+      }*/
+      
+      current_sent.clear();
+      current_sent_pos.clear();
+      current_sent_str.clear();
+      graph.clear();
+    } else {
+      //stack and buffer, for now, leave it like this.
+      // one line in each sentence may look like:
+      // 5  American  american  ADJ JJ  Degree=Pos  6 amod  _ _
+      // read the every line
+      if (lineS[0] == '#') continue;
+      std::vector<std::string> items = split(lineS,'\t');
+      if (items[0].find('-') != std::string::npos) continue;
+      if (items[0].find('.') != std::string::npos) continue;
+      unsigned id = std::atoi(items[0].c_str()) - 1;
+      std::string word = items[1];
+      //std::string word = StrToLower(items[1]);
+      std::string pos = items[3];
+      unsigned head = std::atoi(items[6].c_str()) - 1;
+      std::string rel = items[7];
+      graph[id].push_back(std::make_pair(head, rel));
+      if (graph[id].size() > 1) continue;
+      // new POS tag
+      if (posToInt[pos] == 0) {
+        posToInt[pos] = maxPos;
+        intToPos[maxPos] = pos;
+        npos = maxPos;
+        maxPos++;
+      }
+      // add an empty string for any token except OOVs (it is easy to 
+      // recover the surface form of non-OOV using intToWords(id)).
+      current_sent_str.push_back("");
+      // OOV word
+      if (wordsToInt[word] == 0) {
+          // save the surface form of this OOV before overwriting it.
+          current_sent_str[current_sent_str.size()-1] = word;
+          word = Corpus::UNK;
+      }
+      //current_sent_str[current_sent_str.size()-1] = items[1]; // saving lower word
+      current_sent.push_back(wordsToInt[word]);
+      current_sent_pos.push_back(posToInt[pos]);
+    }
+  }
+
+  // Add the last sentence.
+  if (current_sent.size() > 0) {
+    std::vector<std::string> gold_acts;
+    system->get_actions(graph, gold_acts);
+    bool found=false;
+    for (auto g: gold_acts){
+      //std::cerr << g << std::endl;
+      auto actionIter = std::find(actions.begin(), actions.end(), g);
+      if (actionIter != actions.end()) {
+        unsigned actionIndex = std::distance(actions.begin(), actionIter);
+        correct_act_sentDev[sentence].push_back(actionIndex);
+      } else {
+        // new action
+        actions.push_back(g);
+        unsigned actionIndex = actions.size() - 1;
+        correct_act_sentDev[sentence].push_back(actionIndex);
+      }
+    }
+    current_sent.push_back(wordsToInt[Corpus::ROOT]);
+    current_sent_pos.push_back(posToInt[Corpus::ROOT]);
+    current_sent_str.push_back("");
+
+    sentencesDev[sentence] = current_sent;
+    sentencesPosDev[sentence] = current_sent_pos;
+    sentencesStrDev[sentence] = current_sent_str;     
+    sentence++;
+    nsentencesDev = sentence;
+  }
+      
+  actionsFile.close();
+  if (DEBUG){
+    std::cerr<<"done"<<"\n";
+    for (auto a: actions)
+      std::cerr<<a<<"\n";
+  }
+  nactions=actions.size();
+  if (DEBUG){
+    std::cerr<<"nactions:"<<nactions<<"\n";
+    std::cerr<<"nwords:"<<nwords<<"\n";
+    for (unsigned i=0;i<npos;i++)
+      std::cerr<<i<<":"<<intToPos[i]<<"\n";
+  }
+  //nactions=actions.size();
+}
+
+inline void load_conll_fileTest(std::string file){
+  std::ifstream actionsFile(file);
+  //correct_act_sent=new vector<vector<unsigned>>();
+  if (!actionsFile){
+    std::cerr << "### File does not exist! ###" << std::endl;
+  }
+  std::string lineS;
+
+  assert(maxPos > 1);
+  assert(max > 3);
+  assert(maxExtraWord == 1);
+  int sentence = 0;
+  std::vector<unsigned> current_sent;
+  std::vector<unsigned> current_sent_pos;
+  std::vector<std::string> current_sent_str;
+  while (getline(actionsFile, lineS)){
+    //istringstream iss(line);
+    //string lineS;
+    //iss>>lineS;
+    ReplaceStringInPlace(lineS, "-RRB-", "_RRB_");
+    ReplaceStringInPlace(lineS, "-LRB-", "_LRB_");
+    if (lineS.empty()) {
+      current_sent.push_back(wordsToInt[Corpus::ROOT]);
+      current_sent_pos.push_back(posToInt[Corpus::ROOT]);
+      current_sent_str.push_back("");
+      sentencesTest[sentence] = current_sent;
+      sentencesPosTest[sentence] = current_sent_pos;
+      sentencesStrTest[sentence] = current_sent_str;
+      sentence++;
+      nsentencesTest = sentence;
+
+      /*for (int j = 0; j < current_sent.size(); ++j){
+        std::cerr << j << "\t" << intToWords[current_sent[j]] << "\t" << intToPos[current_sent_pos[j]]
+        << "\t" << intToCluster[current_sent_cls[j]] << std::endl;
+      }*/
+      
+      current_sent.clear();
+      current_sent_pos.clear();
+      current_sent_str.clear();
+    } else {
+      //stack and buffer, for now, leave it like this.
+      // one line in each sentence may look like:
+      // 5  American  american  ADJ JJ  Degree=Pos  6 amod  _ _
+      // read the every line
+      if (lineS[0] == '#') continue;
+      std::vector<std::string> items = split(lineS,'\t');
+      if (items[0].find('.') != std::string::npos) continue;
+      unsigned id = std::atoi(items[0].c_str()) - 1;
+      std::string word = items[1];
+      //std::string word = StrToLower(items[1]);
+      std::string pos = items[3];
+      //unsigned head = std::atoi(items[6].c_str()) - 1;
+      //std::string rel = items[7];
+      // new POS tag
+      if (posToInt[pos] == 0) {
+        posToInt[pos] = maxPos;
+        intToPos[maxPos] = pos;
+        npos = maxPos;
+        maxPos++;
+      }
+      // add an empty string for any token except OOVs (it is easy to 
+      // recover the surface form of non-OOV using intToWords(id)).
+      current_sent_str.push_back("");
+      // OOV word
+      if (wordsToInt[word] == 0) {
+        // save the surface form of this OOV before overwriting it.
+        current_sent_str[current_sent_str.size()-1] = word;
+        word = Corpus::UNK;
+      }
+      //current_sent_str[current_sent_str.size()-1] = items[1]; // saving lower word
+      // cluster
+      current_sent.push_back(wordsToInt[word]);
+      current_sent_pos.push_back(posToInt[pos]);
+    }
+  }
+
+  // Add the last sentence.
+  if (current_sent.size() > 0) {
+    current_sent.push_back(wordsToInt[Corpus::ROOT]);
+    current_sent_pos.push_back(posToInt[Corpus::ROOT]);
+    current_sent_str.push_back("");
+    sentencesTest[sentence] = current_sent;
+    sentencesPosTest[sentence] = current_sent_pos;
+    sentencesStrTest[sentence] = current_sent_str; 
+    sentence++;
+    nsentencesTest = sentence;
+  }
+      
+  actionsFile.close();
+  if (DEBUG){
+    std::cerr << "test sentence = " << nsentencesTest << std::endl;
+    std::cerr<<"done"<<"\n";
+    for (auto a: actions)
+      std::cerr<<a<<"\n";
+  }
+  nactions=actions.size();
+  if (DEBUG){
+    std::cerr<<"nactions:"<<nactions<<"\n";
+    std::cerr<<"nwords:"<<nwords<<"\n";
+    for (unsigned i=0;i<npos;i++)
+      std::cerr<<i<<":"<<intToPos[i]<<"\n";
+  }
+}
 
 inline void load_correct_actions(std::string file){
 	
@@ -106,10 +568,6 @@ inline void load_correct_actions(std::string file){
   assert(maxPos == 0);
   max=2;
   maxPos=1;
-  
-  charsToInt[BAD0]=1;
-  intToChars[1]="BAD0";
-  maxChars=1;
   
 	std::vector<unsigned> current_sent;
   std::vector<unsigned> current_sent_pos;
@@ -173,20 +631,6 @@ inline void load_correct_actions(std::string file){
             intToWords[max] = word;
             nwords = max;
             max++;
-
-            unsigned j = 0;
-            while(j < word.length()) {
-              std::string wj = "";
-              for (unsigned h = j; h < j + UTF8Len(word[j]); h++) {
-                wj += word[h];
-              }
-              if (charsToInt[wj] == 0) {
-                charsToInt[wj] = maxChars;
-                intToChars[maxChars] = wj;
-                maxChars++;
-              }
-              j += UTF8Len(word[j]);
-            }
           }
         
           current_sent.push_back(wordsToInt[word]);

@@ -21,6 +21,12 @@
 
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/map.hpp>
+#include <boost/serialization/set.hpp>
+#include <boost/serialization/unordered_map.hpp>
 #include <boost/program_options.hpp>
 
 #include "cnn/training.h"
@@ -114,9 +120,11 @@ public:
   ~LSTMParser();
 
   void set_options(Options opts);
+  bool save_model(string model_file);
+  bool load_model(string model_file, string dev_data_file = "");
   bool load(string model_file, string training_data_file, string word_embedding_file,
                         string dev_data_file = "");
-
+  bool setup_dynet();
   void get_dynamic_infos();
 
   bool has_path_to(int w1, int w2, const std::vector<std::vector<bool>>& graph);

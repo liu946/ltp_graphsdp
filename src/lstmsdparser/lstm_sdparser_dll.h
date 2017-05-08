@@ -18,17 +18,17 @@
 #endif // end for _WIN32
 
 /*
- * create a new postagger
+ * create a new parser
  *
- *  @param[in] path the path of the model
+ *  @param[in] path of the model
  *  @return void * the pointer to the segmentor
  */
-LSTMSDPARSER_DLL_API void * lstmsdparser_create_parser(const char * data_dir);
+LSTMSDPARSER_DLL_API void * lstmsdparser_create_parser(const char * model_dir);
 
 /*
- * release the postagger resources
+ * release the parser resources
  *
- *  @param[in]  segmentor   the segmentor
+ *  @param[in]  parser   the parser
  *  @return     int         i don't know
  */
 LSTMSDPARSER_DLL_API int lstmsdparser_release_parser(void * parser);
