@@ -6,8 +6,6 @@
 using ltp::lstmsdparser::LSTMParser;
 //namespace po = boost::program_options;
 
-cpyp::Corpus corpus;
-
 using namespace cnn::expr;
 using namespace cnn;
 using namespace std;
