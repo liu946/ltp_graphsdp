@@ -22,6 +22,8 @@ void LSTMParser::set_options(Options opts){
 bool LSTMParser::save_model(string model_file){
   std::ofstream out(model_file.c_str());
   boost::archive::binary_oarchive oa(out);
+  //cerr << "nword: " << corpus.nwords << " nact: " << corpus.nactions 
+	//<< " npos: " << corpus.npos << endl;
   oa << corpus.nwords;
   oa << corpus.nactions;
   oa << corpus.npos;
@@ -72,7 +74,9 @@ bool LSTMParser::load_model(string model_file, string dev_data_file){
 
   ia >> pretrained;
   ia >> training_vocab;
-
+  
+  //cerr << "nword: " << corpus.nwords << " nact: " << corpus.nactions 
+	//<< " npos: " << corpus.npos << endl;
   kUNK = corpus.get_or_add_word(cpyp::Corpus::UNK);
 
   // from get_dynamic_infos
@@ -137,11 +141,11 @@ bool LSTMParser::setup_dynet(){
   p_buffer_guard = model.add_parameters({Opt.LSTM_INPUT_DIM});
   p_stack_guard = model.add_parameters({Opt.LSTM_INPUT_DIM});
   p_pass_guard = model.add_parameters({Opt.LSTM_INPUT_DIM});
-  if (Opt.USE_POS) {
+  if (Opt.USE_POS) {//cerr << "USE POS" << endl;
     p_p = model.add_lookup_parameters(System_size.POS_SIZE, {Opt.POS_DIM});
     p_p2l = model.add_parameters({Opt.LSTM_INPUT_DIM, Opt.POS_DIM});
   }
-  if (pretrained.size() > 0) {
+  if (pretrained.size() > 0) {//cerr << "PRETRAINED" << endl;
     p_t = model.add_lookup_parameters(System_size.VOCAB_SIZE, {Opt.PRETRAINED_DIM});
     for (auto it : pretrained)
       p_t->Initialize(it.first, it.second);
@@ -150,6 +154,11 @@ bool LSTMParser::setup_dynet(){
     p_t = nullptr;
     p_t2l = nullptr;
   }
+  /*cerr << "VOCAB: " << System_size.VOCAB_SIZE << " POS: " << System_size.POS_SIZE 
+	<< " ACT: " << System_size.ACTION_SIZE << " PRE: " << Opt.PRETRAINED_DIM 
+	<< " HID: " << Opt.HIDDEN_DIM << " LSTM INPUT: " << Opt.LSTM_INPUT_DIM 
+	<< " LAY: " << Opt.LAYERS << " INPUT: " << Opt.INPUT_DIM 
+	<< " REL: " << Opt.REL_DIM << " ACTDIM: " << Opt.ACTION_DIM  << endl;*/
   return true;
 }
 
@@ -165,7 +174,7 @@ bool LSTMParser::load(string model_file, string training_data_file, string word_
 
   pretrained[kUNK] = std::vector<float>(Opt.PRETRAINED_DIM, 0);
   if (DEBUG)
-    cerr << "Loading word embeddings from " << word_embedding_file << " with" << Opt.PRETRAINED_DIM << " dimensions\n";
+    cerr << "Loading word embeddings from " << word_embedding_file << " with " << Opt.PRETRAINED_DIM << " dimensions\n";
   ifstream in(word_embedding_file.c_str());
   string line;
   getline(in, line);
@@ -177,6 +186,14 @@ bool LSTMParser::load(string model_file, string training_data_file, string word_
     for (unsigned i = 0; i < Opt.PRETRAINED_DIM; ++i) lin >> v[i];
     unsigned id = corpus.get_or_add_word(word);
     pretrained[id] = v;
+  }
+
+  if (dev_data_file.length() > 0){
+    if (DEBUG)
+      cerr << "loading dev data from " << dev_data_file << endl;
+    corpus.load_conll_fileDev(dev_data_file);
+    if (DEBUG)
+      cerr << "finish loading dev data" << endl;
   }
 
   get_dynamic_infos();
@@ -191,13 +208,14 @@ bool LSTMParser::load(string model_file, string training_data_file, string word_
     if (DEBUG)
       cerr << "finish loading model" << endl;
   }
-  if (dev_data_file.length() > 0){
+  /*if (dev_data_file.length() > 0){
     if (DEBUG)
       cerr << "loading dev data from " << dev_data_file << endl;
     corpus.load_conll_fileDev(dev_data_file);
     if (DEBUG)
       cerr << "finish loading dev data" << endl;
-  }
+  }*/
+
   return true;
 }
 
@@ -213,7 +231,8 @@ void LSTMParser::get_dynamic_infos(){
       if (wc.second == 1) singletons.insert(wc.first);
   }
   if (DEBUG)
-    cerr << "Number of words: " << corpus.nwords << endl;
+    cerr << "Number of words: " << corpus.nwords 
+	<< "\nNumber of POS: " << corpus.npos << endl;
   System_size.VOCAB_SIZE = corpus.nwords + 1;
   //ACTION_SIZE = corpus.nactions + 1;
   System_size.ACTION_SIZE = corpus.nactions + 30; // leave places for new actions in test set

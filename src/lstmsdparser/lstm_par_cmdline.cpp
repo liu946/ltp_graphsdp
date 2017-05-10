@@ -66,7 +66,7 @@ int main(int argc, char * argv[]) {
 
   options_description optparser = options_description(usage);
   optparser.add_options()
-    ("model-directory", value<std::string>(), "The directory of model folder [default=ltp_data/semparser.model].")
+    ("model-directory", value<std::string>(), "The directory of model folder [default=ltp_data/sdp.model].")
     ("input", value<std::string>(), "The path to the input file. "
      "Input data should contain one sentence each line. "
      "Words should be separated by space with POS tag appended by "
@@ -84,7 +84,7 @@ int main(int argc, char * argv[]) {
   std::string input = "";
   if (vm.count("input")) { input = vm["input"].as<std::string>(); }
 
-  std::string model_directory = "ltp_data/semparser/";
+  std::string model_directory = "ltp_data/sdp.model";
   if (vm.count("model-directory")) {
     model_directory = vm["model-directory"].as<std::string>();
   }

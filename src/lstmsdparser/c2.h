@@ -324,6 +324,7 @@ inline void load_conll_fileDev(std::string file){
     //istringstream iss(line);
     //string lineS;
     //iss>>lineS;
+    //std::cerr << lineS << std::endl;
     ReplaceStringInPlace(lineS, "-RRB-", "_RRB_");
     ReplaceStringInPlace(lineS, "-LRB-", "_LRB_");
     if (lineS.empty()) {
@@ -352,8 +353,7 @@ inline void load_conll_fileDev(std::string file){
       sentence++;
       nsentencesDev = sentence;
 
-      /*if (is_tree) std::cerr << "is tree" << std::endl;
-      for (int j = 0; j < graph.size(); ++j){
+      /*for (int j = 0; j < graph.size(); ++j){
         std::cerr << j << "\t" << intToWords[current_sent[j]] << "\t" << intToPos[current_sent_pos[j]]
         << "\t" << graph[j].back().first << "\t" << graph[j].back().second << std::endl;
       }*/

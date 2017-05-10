@@ -69,8 +69,8 @@ int main(int argc, char *argv[]) {
     ("parser-model", value<std::string>(),
      "The path to the parser model [default=ltp_data/parser.model].")
 
-    ("semparser-data", value<std::string>(),
-     "The path to the lstm semparser model [default=ltp_data/semparser/].")
+    ("sdp-model", value<std::string>(),
+     "The path to the lstm semparser model [default=ltp_data/sdp.model].")
 
 #ifdef USESDPTREE
     ("semparser-model", value<std::string>(),
@@ -163,9 +163,9 @@ int main(int argc, char *argv[]) {
   INFO_LOG("parser model after vm :\"%s\"", parser_model.c_str());
 
 
-  std::string lstm_semparser_data = "ltp_data/semparser/";
-  if (vm.count("semparser-data")) {
-    lstm_semparser_data = vm["semparser-data"].as<std::string>();
+  std::string lstm_semparser_data = "ltp_data/sdp.model";
+  if (vm.count("sdp-model")) {
+    lstm_semparser_data = vm["sdp-model"].as<std::string>();
   }
   INFO_LOG("lstm semantic parser source after directory: \"%s\"" ,lstm_semparser_data.c_str());
 

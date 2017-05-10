@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
 
   //Model model;
   LSTMParser *parser = new LSTMParser();
-  //parser -> set_options(Opt);
+  parser -> set_options(Opt);
 
   parser->DEBUG = true;
   if (conf.count("model")){
@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
     parser -> load_model(conf["model"].as<string>(), conf["dev_data"].as<string>());
   }
   else{
-    parser -> set_options(Opt);
+    //parser -> set_options(Opt);
     parser -> load("", conf["training_data"].as<string>(), 
                   conf["words"].as<string>(), conf["dev_data"].as<string>() );
   }
