@@ -32,7 +32,7 @@ target_link_libraries (ltp_test
     boost_regex_static_lib
     boost_program_options_static_lib
     boost_serialization_static_lib
-    cnn)
+    dynet)
 
 add_executable (cws_cmdline cws_cmdline.cpp
     ${THIRDPARTY_DIR}/tinythreadpp/tinythread.cpp)

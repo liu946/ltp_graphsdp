@@ -33,5 +33,5 @@ target_link_libraries (ltp_server
     boost_regex_static_lib
     boost_serialization_static_lib
     dl
-    cnn
+    dynet
     jsoncpp)

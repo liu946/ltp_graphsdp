@@ -1,7 +1,7 @@
 add_subdirectory (boost)
 add_subdirectory (maxent)
 add_subdirectory (tinyxml)
-add_subdirectory (cnn)
+#add_subdirectory (cnn)
 add_subdirectory (jsoncpp)
 add_subdirectory (dynet)
 

@@ -1,8 +1,6 @@
 include_directories (${SOURCE_DIR}/
     ${THIRDPARTY_DIR}/boost/include
-    ${THIRDPARTY_DIR}/eigen-3.2.10/
     ${THIRDPARTY_DIR}/eigen/
-    ${THIRDPARTY_DIR}/cnn/
     ${THIRDPARTY_DIR}/dynet/
     )
 
@@ -36,11 +34,11 @@ add_library(lstm_sdparser_shared_lib SHARED lstm_sdparser_dll.cpp ${lstm_sdparse
 set_target_properties (lstm_sdparser_shared_lib    PROPERTIES
     VERSION         ${lstm_sdparser_VERSION}
     OUTPUT_NAME     lstm_sdparser)
-target_link_libraries(lstm_sdparser_shared_lib cnn dynet ${Boost_LIBRARIES})
+target_link_libraries(lstm_sdparser_shared_lib dynet ${Boost_LIBRARIES})
 
 # redirect output binary to tools/train
 add_executable(lstm-parse main.cpp ${lstm_sdparser_SRC})
-target_link_libraries(lstm-parse cnn dynet ${Boost_LIBRARIES})
+target_link_libraries(lstm-parse dynet ${Boost_LIBRARIES})
 set_target_properties (lstm-parse PROPERTIES
     OUTPUT_NAME lstm-parse
     RUNTIME_OUTPUT_DIRECTORY ${TOOLS_DIR}/train/)
@@ -50,7 +48,7 @@ configure_file (
 
 
 add_executable(lstm_par_cmdline lstm_par_cmdline.cpp)
-target_link_libraries (lstm_par_cmdline lstm_sdparser_static_lib cnn dynet ${Boost_LIBRARIES})
+target_link_libraries (lstm_par_cmdline lstm_sdparser_static_lib dynet ${Boost_LIBRARIES})
 set_target_properties (lstm_par_cmdline PROPERTIES
     OUTPUT_NAME lstm_par_cmdline
     RUNTIME_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}/examples/)
