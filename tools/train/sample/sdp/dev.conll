@@ -1,0 +1,55 @@
+1	她	她	r	r	_	6	Agt	_	_
+2	轻轻	轻轻	d	d	_	6	Mann	_	_
+3	地	地	u	u	_	2	mAux	_	_
+4	把	把	p	p	_	5	mPrep	_	_
+5	防晒油	防晒油	n	n	_	6	Matl	_	_
+6	涂	涂	v	v	_	0	Root	_	_
+7	在	在	p	p	_	8	mPrep	_	_
+8	胳膊	胳膊	n	n	_	6	Loc	_	_
+9	上	上	nd	nd	_	8	mRang	_	_
+10	。	。	wp	wp	_	6	mPunc	_	_
+
+1	苹果	苹果	n	n	_	2	Desc	_	_
+2	树	树	n	n	_	4	Exp	_	_
+3	正在	正在	d	d	_	4	mTime	_	_
+4	开	开	v	v	_	0	Root	_	_
+5	花	花	n	n	_	4	Prod	_	_
+6	。	。	wp	wp	_	4	mPunc	_	_
+
+1	主席台	主席台	n	n	_	2	Exp	_	_
+2	设	设	v	v	_	0	Root	_	_
+3	在	在	p	p	_	5	mPrep	_	_
+4	天安门	天安门	ns	ns	_	5	Nmod	_	_
+5	城楼	城楼	n	n	_	2	Loc	_	_
+6	上	上	nd	nd	_	5	mRang	_	_
+7	。	。	wp	wp	_	2	mPunc	_	_
+
+1	我们	我们	r	r	_	2	Poss	_	_
+2	公司	公司	n	n	_	3	Agt	_	_
+3	雇佣	雇佣	v	v	_	0	Root	_	_
+4	了	了	u	u	_	3	mTime	_	_
+5	大约	大约	d	d	_	3	mMod	_	_
+6	一百	一百	m	m	_	7	Quan	_	_
+7	人	人	n	n	_	3	Pat	_	_
+8	。	。	wp	wp	_	3	mPunc	_	_
+
+1	这	这	r	r	_	3	Exp	_	_
+2	不	不	d	d	_	3	mNeg	_	_
+3	是	是	v	v	_	0	Root	_	_
+4	新书	新书	n	n	_	3	Clas	_	_
+5	。	。	wp	wp	_	3	mPunc	_	_
+
+1	他	他	r	r	_	3	Exp	_	_
+2	已	已	d	d	_	3	mTime	_	_
+3	获准	获准	v	v	_	0	Root	_	_
+4	恢复	恢复	v	v	_	3	dCont	_	_
+5	自由	自由	a	a	_	4	Stat	_	_
+6	，	，	wp	wp	_	3	mPunc	_	_
+7	条件	条件	n	n	_	8	Exp	_	_
+8	是	是	v	v	_	3	eCond	_	_
+9	他	他	r	r	_	10	Agt	_	_
+10	离开	离开	v	v	_	8	dClas	_	_
+11	这	这	r	r	_	12	Sco	_	_
+12	个	个	q	q	_	13	Qp	_	_
+13	国家	国家	n	n	_	10	Lini	_	_
+14	。	。	wp	wp	_	8	mPunc	_	_
