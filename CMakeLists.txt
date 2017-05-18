@@ -9,6 +9,7 @@ set (CMAKE_MODULE_PATH      ${PROJECT_SOURCE_DIR}/cmake)
 if (APPLE)
   add_definitions(-DGTEST_HAS_TR1_TUPLE=0)
   set(CMAKE_CXX_FLAGS "-std=c++0x -Wno-c++11-narrowing")
+  set(CMAKE_MACOSX_RPATH 1)
 elseif(UNIX)
   set(CMAKE_CXX_FLAGS "-std=c++0x -fPIC")
 elseif(MINGW)
@@ -16,6 +17,7 @@ elseif(MINGW)
 elseif(MSVC)
   set(CMAKE_CXX_FLAGS "/EHsc")
 endif(APPLE)
+
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DEIGEN_FAST_MATH")
 
