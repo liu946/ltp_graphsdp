@@ -1064,11 +1064,13 @@ int LSTMParser::process_headless(vector<vector<string>>& hyp, vector<vector<stri
                 has_head_flag = true;
         }
         if (!has_head_flag){
+	    //cerr << "lack head:" << i << endl;
             miss_head_num ++;
             // use candidate relations
             for (unsigned j = 0; j < cand.size(); ++j){
-                if (cand[j][i] != REL_NULL && !has_path_to(i, j, hyp)){
+                if (cand[j][i] != REL_NULL && !has_path_to(i, j, hyp)){ 
                     hyp[j][i] = cand[j][i];
+		    //cerr << "use cand:" << j << " rel:" << hyp[j][i] << endl;
                     miss_head_num --;
                     has_head_flag = true;
                     break;
@@ -1076,6 +1078,7 @@ int LSTMParser::process_headless(vector<vector<string>>& hyp, vector<vector<stri
             }
             // recompute
             if (!has_head_flag){
+		//cerr << "recomputing" << endl;
                 //count root
                 int root_num = 0;
                 for (unsigned q = 0; q < hyp.size() - 1; ++q)
@@ -1304,22 +1307,13 @@ void LSTMParser::predict_dev() {
       pred = log_prob_parser(&cg, sentence, tsentence, sentencePos, std::vector<unsigned>(),
                                                          &right, cand, &word_rep, &act_rep);
       }
-      /*cerr << cand.size() << endl;
-      for (unsigned i = 0; i < cand.size(); ++i){
-        for (unsigned j = 0; j < cand.size(); ++j){
-            if (cand[i][j] != REL_NULL)
-                cerr << "from " << i << " to " << j << " rel: " << cand[i][j] << endl;
-        }
-      }*/
       llh -= lp;
       trs += actions.size();
       //map<int, string> rel_ref, rel_hyp;
       //cerr << "compute heads "<<endl;
       std::vector<std::vector<string>> ref = compute_heads(sentence, actions);
       std::vector<std::vector<string>> hyp = compute_heads(sentence, pred);
-      refs.push_back(ref);
-      hyps.push_back(hyp);
-
+      
       /*for (unsigned i = 0; i < hyp.size(); ++i){
         for (unsigned j = 0; j < hyp.size(); ++j){
             if (hyp[i][j] != REL_NULL)
@@ -1330,7 +1324,18 @@ void LSTMParser::predict_dev() {
       if (process_headless(hyp, cand, word_rep, act_rep, sentence, sentencePos) > 0) {
             miss_head++;
             cerr << corpus.intToWords[sentence[0]] << corpus.intToWords[sentence[1]]<< endl;
+      }
+
+      refs.push_back(ref);
+      hyps.push_back(hyp);
+
+      /*for (unsigned i = 0; i < hyp.size(); ++i){
+        for (unsigned j = 0; j < hyp.size(); ++j){
+            if (hyp[i][j] != REL_NULL)
+                cerr << "from " << i << " to " << j << " rel: " << hyp[i][j] << endl;
         }
+      }*/
+
       //cerr<<"write to file" <<endl;
       //output_conll(sentence, sentencePos, sentenceUnkStr, hyp);
       //correct_heads += compute_correct(ref, hyp, sentence.size() - 1);
