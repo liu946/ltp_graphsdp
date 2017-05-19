@@ -17,7 +17,7 @@
 
 #define LTP_SERVICE_NAME_SEGMENT  "ws"
 #define LTP_SERVICE_NAME_POSTAG   "pos"
-#define LTP_SERVICE_NAME_NER      "ne"
+#define LTP_SERVICE_NAME_NER      "ner"
 #define LTP_SERVICE_NAME_DEPPARSE "dp"
 #define LTP_SERVICE_NAME_SEMDEPPARSE "sdp"
 #define LTP_SERVICE_NAME_SRL      "srl"

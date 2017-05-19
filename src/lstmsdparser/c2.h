@@ -113,9 +113,9 @@ public:
    std::map<unsigned, std::string> intToPos;
 
    // String literals
-   static constexpr const char* UNK = "UNK";
-   static constexpr const char* BAD0 = "<BAD0>";
-   static constexpr const char* ROOT = "ROOT";
+   static const char* UNK;
+   static const char* BAD0;
+   static const char* ROOT;
 
 /*  std::map<unsigned,unsigned>* headsTraining;
   std::map<unsigned,std::string>* labelsTraining;
