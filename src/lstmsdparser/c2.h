@@ -456,7 +456,7 @@ inline void load_conll_fileTest(std::string file){
 
   assert(maxPos > 1);
   assert(max > 3);
-  assert(maxExtraWord == 1);
+  //assert(maxExtraWord == 1);
   int sentence = 0;
   std::vector<unsigned> current_sent;
   std::vector<unsigned> current_sent_pos;
