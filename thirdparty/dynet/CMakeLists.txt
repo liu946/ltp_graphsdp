@@ -14,7 +14,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 # NOTE: This seems to be causing problems with linking before using
 #       make install. It is allegedly preferred, but probably doesn't
 #       suit our model of not installing the library most of the time.
-set(CMAKE_MACOSX_RPATH 0)
+##set(CMAKE_MACOSX_RPATH 0)
 
 function(find_mkl)
   set(MKL_ARCH intel64)
@@ -74,7 +74,7 @@ else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -funroll-loops -fno-finite-math-only -Wall -Wno-missing-braces -std=c++11 -Ofast -g -march=native")
 endif()
 
-enable_testing()
+#enable_testing()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}
                     ${PROJECT_SOURCE_DIR}/external/easyloggingpp/src)
@@ -101,19 +101,25 @@ function(find_cudnn)
 endfunction()
 
 # look for Boost
-if(DEFINED BOOST_ROOT OR DEFINED BOOSTROOT OR DEFINED ENV{BOOST_ROOT} OR DEFINED ENV{BOOSTROOT})
-  set(Boost_NO_SYSTEM_PATHS ON)
-  if(DEFINED ${Boost_INCLUDE_DIR})
-    get_filename_component(Boost_INCLUDE_DIR "${Boost_INCLUDE_DIR}" REALPATH BASE_DIR "${CMAKE_BINARY_DIR}")
-  endif()
-endif()
-#set(Boost_REALPATH ON)
-find_package(Boost COMPONENTS program_options regex serialization REQUIRED)
+##set(BOOST_ROOT ${THIRDPARTY_DIR}/boost)
+##if(DEFINED BOOST_ROOT OR DEFINED BOOSTROOT OR DEFINED ENV{BOOST_ROOT} OR DEFINED ENV{BOOSTROOT})
+##  set(Boost_NO_SYSTEM_PATHS ON)
+##  if(DEFINED ${Boost_INCLUDE_DIR})
+##    get_filename_component(Boost_INCLUDE_DIR "${Boost_INCLUDE_DIR}" REALPATH BASE_DIR "${CMAKE_BINARY_DIR}")
+##  endif()
+##endif()
+##set(Boost_REALPATH ON)
+##find_package(Boost COMPONENTS program_options regex serialization REQUIRED)
 
-#set(Boost_INCLUDE_DIR ${THIRDPARTY_DIR}/boost/include)
+set(Boost_INCLUDE_DIR ${THIRDPARTY_DIR}/boost/include)
+set(Boost_LIBRARY_DIRS ${LIBRARY_OUTPUT_PATH})
+set(Boost_LIBRARIES
+    boost_regex_static_lib
+    boost_program_options_static_lib
+    boost_serialization_static_lib
+    )
 message("-- Boost dir is " ${Boost_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIR})
-#include_directories (${THIRDPARTY_DIR}/boost/include)
 if(MSVC)
   # Boost does auto-linking when using a compiler like Microsoft Visual C++, we just need to help it find the libraries
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LIBPATH:${Boost_LIBRARY_DIRS}")
@@ -166,8 +172,8 @@ if (WITH_CUDA_BACKEND)
 endif()
 
 # look for Eigen
-get_filename_component(EIGEN3_INCLUDE_DIR "${EIGEN3_INCLUDE_DIR}" REALPATH BASE_DIR "${CMAKE_BINARY_DIR}")
-message("-- Eigen dir is " ${EIGEN3_INCLUDE_DIR})
+#get_filename_component(EIGEN3_INCLUDE_DIR "${EIGEN3_INCLUDE_DIR}" REALPATH BASE_DIR "${CMAKE_BINARY_DIR}")
+#message("-- Eigen dir is " ${EIGEN3_INCLUDE_DIR})
 #find_package(Eigen3 REQUIRED)
 set(EIGEN3_INCLUDE_DIR ${THIRDPARTY_DIR}/eigen)
 include_directories(${EIGEN3_INCLUDE_DIR})
@@ -190,4 +196,4 @@ if(INCLUDE_SWIG)
   add_subdirectory(contrib/swig)
 endif(INCLUDE_SWIG)
 
-enable_testing()
+##enable_testing()

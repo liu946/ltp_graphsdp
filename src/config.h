@@ -7,6 +7,7 @@
 #define BOOST_ALL_NO_LIB
 
 #define USESDPTREE
+#undef USESDPTREE
 
 namespace ltp {
 
