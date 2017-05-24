@@ -63,6 +63,12 @@ target_link_libraries (ner_cmdline ner_static_lib
 set_target_properties (ner_cmdline PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}/examples/)
 
+add_executable (srl_cmdline srl_cmdline.cpp
+        ${THIRDPARTY_DIR}/tinythreadpp/tinythread.cpp)
+target_link_libraries (srl_cmdline srl_static_lib
+        boost_program_options_static_lib)
+set_target_properties (srl_cmdline PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}/examples/)
 
 if (NOT MSVC AND NOT MINGW)
   target_link_libraries (ltp_test pthread)
