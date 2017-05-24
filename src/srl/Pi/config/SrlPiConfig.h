@@ -18,18 +18,18 @@ public:
   unsigned lstm_hidden_dim;
   unsigned layers;
 
-  string embeding;
+  string embedding;
 
   SrlPiBaseConfig(string confName = "Configuration"): ModelConf(confName) {
-    registerConf<unsigned>("word_dim"       , UNSIGNED, word_dim         , "word_dim"       , 100);
-    registerConf<unsigned>("emb_dim"        , UNSIGNED, emb_dim          , "emb_dim"        , 50);
-    registerConf<unsigned>("pos_dim"        , UNSIGNED, pos_dim          , "pos_dim"        , 12);
-    registerConf<unsigned>("rel_dim"        , UNSIGNED, rel_dim          , "rel_dim"        , 50);
-    registerConf<unsigned>("lstm_input_dim" , UNSIGNED, lstm_input_dim   , "lstm_input_dim" , 100);
-    registerConf<unsigned>("lstm_hidden_dim", UNSIGNED, lstm_hidden_dim  , "lstm_hidden_dim", 100);
-    registerConf<unsigned>("layers"         , UNSIGNED, layers           , "dynetRnnBuilder layers"    , 1);
+    registerConf<unsigned>("word_dim"       , UNSIGNED, word_dim         , "word dimension"       , 100);
+    registerConf<unsigned>("emb_dim"        , UNSIGNED, emb_dim          , "embedding dimension"  , 50);
+    registerConf<unsigned>("pos_dim"        , UNSIGNED, pos_dim          , "postag dimension"     , 12);
+    registerConf<unsigned>("rel_dim"        , UNSIGNED, rel_dim          , "relation dim"         , 50);
+    registerConf<unsigned>("lstm_input_dim" , UNSIGNED, lstm_input_dim   , "lstm_input_dim"       , 100);
+    registerConf<unsigned>("lstm_hidden_dim", UNSIGNED, lstm_hidden_dim  , "lstm_hidden_dim"      , 100);
+    registerConf<unsigned>("layers"         , UNSIGNED, layers           , "lstm layers"          , 1);
 
-    registerConf<string>  ("embeding" , STRING,   embeding , "embeding", "");
+    registerConf<string>  ("embedding" , STRING,   embedding , "embedding", "");
   }
 
   friend class boost::serialization::access;

@@ -193,6 +193,117 @@ nndepparser具有较多参数，但大部分与Chen and Manning (2014)中的定�
 * use-cluster：指定使用词聚类特征，具体参考Guo et. al, (2015)
 * root：根节点的deprel的类型，需要注意的是，当前版本nndepparser只能处理projective single-root的依存树。
 
+训练一个srl分类器
+~~~~~~~~~~~~~~
+
+srl模块由两个部分组成，谓词预测（PI）和语义角色标注（SRL），在本系统中将该模块统一称为srl模块。但是训练的时候需要分开训练。
+
+1. 谓词预测分类器训练
+
+运行`tools/train/srl_pi_train -h`可以得到如下参数提示
+
+     Configuration:
+       -h [ --help ]                      Help
+       --loglevel arg (=0)                 0 = err, war, debug, info
+       --debugModels arg (=*)             debuginfo enabled Models name list
+       --dynet-mem arg (=1000)
+       --dynet-seed arg (=0)              dynet_seed
+       --dynet-gpus arg (=-1)
+       --dynet-gpu-ids arg (=0)
+       -m [ --model ] arg                 model path
+       --activate arg (=rectify)          activate
+       --word_dim arg (=100)              word dimension
+       --emb_dim arg (=50)                embedding dimension
+       --pos_dim arg (=12)                postag dimension
+       --rel_dim arg (=50)                relation dim
+       --lstm_input_dim arg (=100)        lstm_input_dim
+       --lstm_hidden_dim arg (=100)       lstm_hidden_dim
+       --layers arg (=1)                  lstm layers
+       --embedding arg                    embedding
+       -T [ --training_data ] arg         Training corpus
+       -d [ --dev_data ] arg              Development corpus
+       --learning_rate arg (=0.100000001) learning rate
+       --eta_decay arg (=0.0799999982)    eta_decay
+       --best_perf_sensitive arg (=0)     min f upgrade to save model
+       --max_iter arg (=5000)             max training iter(batches)
+       --batch_size arg (=1000)           batch_size
+       --batches_to_save arg (=10)        after x batches to save model
+       --use_dropout                      Use dropout
+       --dropout_rate arg (=0.5)          dropout rate
+       --use_auto_stop arg (=0)           Use auto stop
+
+
+注：关于参数配置会在下文一并解释。
+
+2. 语义角色标注分类器训练
+
+运行`tools/train/srl_srl_train -h`可以得到如下参数提示
+
+    Configuration:
+      -h [ --help ]                      Help
+      --loglevel arg (=0)                 0 = err, war, debug, info
+      --debugModels arg (=*)             debuginfo enabled Models name list
+      --dynet-mem arg (=1000)
+      --dynet-seed arg (=0)              dynet_seed
+      --dynet-gpus arg (=-1)
+      --dynet-gpu-ids arg (=0)
+      -m [ --model ] arg                 model path
+      --activate arg (=rectify)          activate
+      --word_dim arg (=100)              word dimension
+      --emb_dim arg (=50)                embedding dimension
+      --pos_dim arg (=12)                postag dimension
+      --rel_dim arg (=50)                relation dimension
+      --position_dim arg (=5)            position dimension
+      --lstm_input_dim arg (=100)        lstm_input_dim
+      --lstm_hidden_dim arg (=100)       lstm_hidden_dim
+      --hidden_dim arg (=100)            Hidden state dimension
+      --layers arg (=1)                  lstm layers
+      --embedding arg                    word embedding file
+      -T [ --training_data ] arg         Training corpus
+      -d [ --dev_data ] arg              Development corpus
+      --learning_rate arg (=0.100000001) learning rate
+      --eta_decay arg (=0.0799999982)    eta_decay
+      --best_perf_sensitive arg (=0)     min f upgrade to save model
+      --max_iter arg (=5000)             max training iter(batches)
+      --batch_size arg (=1000)           batch_size
+      --batches_to_save arg (=10)        after x batches to save model
+      --use_dropout                      Use dropout
+      --dropout_rate arg (=0.5)          dropout rate
+      --use_auto_stop arg (=0)           Use auto stop
+
+
+注意：
+* 训练集合（--training_data）和开发集合（--dev_data）请严格按照conll2009格式进行输入。请参考`tools/train/sample/srl/example-train.srl`
+* 预训练词向量文件（--embedding）中的维度要和（--emb_dim）相匹配。
+* 训练模型保存采用early-stopping，保存在开发集合上效果最好的模型。后面的模型必须超过前面模型（--best_perf_sensitive）性能才会被保存，默认为0既是保存f1最大的模型。
+* 模型训练中可以通过设置（--max_iter）来控制最大的训练batch数。代码实现了简单自动检测训练完成的逻辑，通过（--use_auto_stop 1）设置，建议仅在调参时开启。
+* 训练过程每个batch训练（--batch_size）个句子，每（--batches_to_save）个batch后检测并存储模型。与最终性能基本无关，可根据句子长度，训练集大小进行调整。
+* 训练过程中如果梯度或准确率出现 nan 情况。可以停止程序，将学习率调低，其他参数使用"完全相同"的配置重新开始训练，程序会在之前最好的结果的基础上继续训练。正常情况下代码会自动处理 nan 问题。
+
+3. 生成可供ltp使用的结合模型
+
+准备如下5个文件
+经过前两步的训练，可以在专属的训练集上得到相应的两个模型。加上训练使用的Embedding文件。
+除了这三个文件之外还需要两个配置文件。配置文件需要根据模型训练时设置同样参数，配置文件形式如`tools/train/sample/srl/example-pi(srl).config`所示。修改这两个文件，将训练模型时的参数写入配置文件。
+另外：目前使用的模型既是使用`tools/train/sample/srl/example-pi(srl).config`所用参数进行训练的。
+
+运行`tools/train/srl_merge_tool -h`可以看到如下参数配置：
+
+      Configuration:
+        -h [ --help ]          Help
+        --loglevel arg (=0)     0 = err, war, debug, info
+        --debugModels arg (=*) debuginfo enabled Models name list
+        --pi_config arg        pi_config
+        --srl_config arg       srl_config
+        --pi_model arg         pi_model
+        --srl_model arg        srl_model
+        --embedding arg        embedding
+        --out_model arg        out_model
+
+按照相应提示将5个文件路径传入，并设置输出位置（--out_model），可以得到可供ltp使用的srl联合模型。
+
+注：该模块采用此方式是为了更好地利用系统资源，使得占用内存和模型空间最大的Embedding部分能够共用。
+
 参考文献
 --------
 - Danqi Chen and Christopher Manning, 2014, A Fast and Accurate Dependency Parser using Neural Networks, In Proc. of *EMNLP2014*

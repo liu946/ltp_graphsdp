@@ -1,19 +1,12 @@
 include_directories (.
-#        ${THIRDPARTY_DIR}/boost/include
+        ${THIRDPARTY_DIR}/boost/include
         ${THIRDPARTY_DIR}/eigen
         ${THIRDPARTY_DIR}/dynet
         )
-# look for Boost
-if(DEFINED ENV{BOOST_ROOT})
-    set(Boost_NO_SYSTEM_PATHS ON)
-endif()
-set(Boost_REALPATH ON)
-find_package(Boost COMPONENTS program_options serialization REQUIRED)
-include_directories(${Boost_INCLUDE_DIR})
-set(LIBS ${LIBS} ${Boost_LIBRARIES})
+
 link_directories(${THIRDPARTY_DIR}/dynet/build/dynet) # -L
 
-set(LIBS ${LIBS} ${Boost_LIBRARIES})
+set(LIBS ${LIBS} boost_program_options_static_lib boost_serialization_static_lib)
 
 add_subdirectory(include)
 include_directories(include)
@@ -42,9 +35,18 @@ set (srl_SRC
         SRL_DLL.cpp
         SRL_DLL.h)
 
-add_library (srl_static_lib STATIC ${srl_SRC})
 
-set_target_properties (srl_static_lib   PROPERTIES
+message(${LIBS})
+add_library (srl_static_lib STATIC ${srl_SRC})
+target_link_libraries (srl_static_lib dynet ${LIBS})
+
+set_target_properties (srl_static_lib    PROPERTIES
+        OUTPUT_NAME     srl)
+
+add_library(srl_shared_lib SHARED ${srl_SRC})
+target_link_libraries (srl_shared_lib dynet ${LIBS})
+set_target_properties (srl_shared_lib    PROPERTIES
+        VERSION         ${srl_VERSION}
         OUTPUT_NAME     srl)
 
 #add_library (ppsrl_shared_lib SHARED ${srl_SRC})

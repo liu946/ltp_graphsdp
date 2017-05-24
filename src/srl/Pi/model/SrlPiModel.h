@@ -39,7 +39,7 @@ public:
   }
   void initEmbedding() {
     if (config.emb_dim)
-      emb_lookup.loadEmb(config.embeding);
+      emb_lookup.loadEmb(config.embedding);
   }
 
   void init() {
