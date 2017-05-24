@@ -58,6 +58,6 @@ target_link_libraries (srl_static_lib dynet ${LIBS})
 
 configure_file (
         SRL_DLL.h
-        ${INCLUDE_OUTPUT_PATH}/ltp/SRL_DLL.h)
+        ${INCLUDE_OUTPUT_PATH}/ltp/srl_dll.h)
 
 link_directories (${LIBRARY_OUTPUT_PATH})
