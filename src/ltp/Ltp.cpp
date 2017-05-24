@@ -599,7 +599,7 @@ int LTP::srl(XML4NLP & xml) {
     vector<string>              vecPOS;
     vector<string>              vecNE;
     vector< pair<int, string> > vecParse;
-    vector< pair<int, vector< pair<const char *, pair< int, int > > > > > vecSRLResult;
+    vector< pair<int, vector< pair<string, pair< int, int > > > > > vecSRLResult;
 
     if (xml.GetWordsFromSentence(vecWord, i) != 0) {
       ERROR_LOG("in LTP::ner, failed to get words from xml");
@@ -621,7 +621,7 @@ int LTP::srl(XML4NLP & xml) {
       return kReadXmlError;
     }
 
-    if (0 != SRL(vecWord, vecPOS, vecNE, vecParse, vecSRLResult)) {
+    if (0 != SRL(vecWord, vecPOS, vecParse, vecSRLResult)) {
       ERROR_LOG("in LTP::srl, failed to perform srl on sent. #%d", i+1);
       return kSRLError;
     }

@@ -1,0 +1,54 @@
+//
+// Created by liu on 2017-05-12.
+//
+
+#ifndef Srl_Srl_CONFIG_H
+#define Srl_Srl_CONFIG_H
+
+#include "config/ModelConf.h"
+
+class SrlSrlBaseConfig : public virtual ModelConf {
+public:
+  unsigned word_dim;
+  unsigned emb_dim;
+  unsigned pos_dim;
+  unsigned rel_dim;
+  unsigned position_dim;
+  unsigned lstm_input_dim;
+  unsigned lstm_hidden_dim;
+  unsigned hidden_dim;
+  unsigned layers;
+  string embeding;
+  SrlSrlBaseConfig(string confName = "Configuration"): ModelConf(confName) {
+    registerConf<unsigned>("word_dim"       , UNSIGNED, word_dim         , "word_dim"       , 100);
+    registerConf<unsigned>("emb_dim"        , UNSIGNED, emb_dim          , "emb_dim"        , 50);
+    registerConf<unsigned>("pos_dim"        , UNSIGNED, pos_dim          , "pos_dim"        , 12);
+    registerConf<unsigned>("rel_dim"        , UNSIGNED, rel_dim          , "rel_dim"        , 50);
+    registerConf<unsigned>("position_dim"   , UNSIGNED, position_dim     , "position_dim"   , 5);
+    registerConf<unsigned>("lstm_input_dim" , UNSIGNED, lstm_input_dim   , "lstm_input_dim" , 100);
+    registerConf<unsigned>("lstm_hidden_dim", UNSIGNED, lstm_hidden_dim  , "lstm_hidden_dim", 100);
+    registerConf<unsigned>("hidden_dim"     , UNSIGNED, hidden_dim       ,   "Hidden state dimension",100);
+    registerConf<unsigned>("layers"         , UNSIGNED, layers           , "dynetRnnBuilder layers"    , 1);
+
+    registerConf<string>  ("embeding" , STRING,   embeding , "embeding", "");
+  }
+};
+
+class SrlSrlTrainConfig : public virtual SrlSrlBaseConfig, public virtual LabelModelTrainerConf {
+public:
+
+  SrlSrlTrainConfig(string confName = "Configuration"):
+          SrlSrlBaseConfig(confName),
+          LabelModelTrainerConf(confName)
+  { }
+};
+
+class SrlSrlPredConfig : public virtual SrlSrlBaseConfig, public virtual LabelModelPredictorConf {
+public:
+  SrlSrlPredConfig(string confName = "Configuration"):
+          SrlSrlBaseConfig(confName),
+          LabelModelPredictorConf(confName)
+  { }
+};
+
+#endif //Srl_Srl_CONFIG_H

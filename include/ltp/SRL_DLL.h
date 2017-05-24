@@ -21,13 +21,19 @@ using namespace std;
         #pragma comment(lib, "srl.lib")
     #endif
 #endif
-
+/**
+ *
+ * @param words
+ * @param POSs
+ * @param parse
+ * @param vecSRLResult 谓词数组[<谓词序号, 论元数组[<论元label, <位置开始，位置结束>>]>] 序号从0开始
+ * @return 执行情况 正常返回0 异常返回-1
+ */
 SRL_DLL_API int SRL(
         const vector<string> &words,
         const vector<string> &POSs,
-        const vector<string> &NEs,
         const vector< pair<int, string> > &parse,
-        vector< pair< int, vector< pair<const char *, pair< int, int > > > > > &vecSRLResult
+        vector< pair< int, vector< pair<string, pair< int, int > > > > > &vecSRLResult
 );
 
 // Load Resources
@@ -35,24 +41,6 @@ SRL_DLL_API int SRL_LoadResource(const string &ConfigDir);
 
 // Release Resources
 SRL_DLL_API int SRL_ReleaseResource();
-
-// Perform SRL
-SRL_DLL_API int DoSRL(
-        const vector<string> &words,
-        const vector<string> &POSs,
-        const vector<string> &NEs,
-        const vector< pair<int, string> > &parse,
-        vector< pair< int, vector< pair<string, pair< int, int > > > > > &tmp_vecSRLResult
-);
-
-SRL_DLL_API int GetSRLResult_size(
-        vector< pair< int, vector< pair<const char *, pair< int, int > > > > > &vecSRLResult,
-        vector< pair< int, vector< pair<string, pair< int, int > > > > > &tmp_vecSRLResult);
-
-
-SRL_DLL_API int GetSRLResult(
-        vector< pair< int, vector< pair<const char *, pair< int, int > > > > > &vecSRLResult,
-        vector< pair< int, vector< pair<string, pair< int, int > > > > > &tmp_vecSRLResult);
 
 #endif
 
