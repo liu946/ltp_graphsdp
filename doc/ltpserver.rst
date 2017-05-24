@@ -44,8 +44,8 @@ LTP Server在轻量级服务器程序mongoose基础上开发。在编译LTP源�
                               ].
       --parser-model arg      The path to the parser model 
                               [default=ltp_data/parser.model].
-      --srl-data arg          The path to the SRL model directory 
-                              [default=ltp_data/srl_data/].
+      --srl-model arg         The path to the srl model directory
+                              [default=ltp_data/pisrl.model].
       --log-level arg         The log level:
                               - 0: TRACE level
                               - 1: DEBUG level

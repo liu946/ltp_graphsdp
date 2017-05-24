@@ -523,7 +523,7 @@
 
 语义角色标注主要提供三个接口：
 
-.. cpp:function:: int SRL_loadResource(const std::string& ConfigDir)
+.. cpp:function:: int srl_load_resource(const std::string& model)
 
     功能：
 
@@ -534,14 +534,14 @@
     +----------------------------------------+--------------------------------------------------------------------+
     | 参数名                                 | 参数描述                                                           |
     +========================================+====================================================================+
-    | const std::string& ConfigDir           | 语义角色标注模型文件夹所在路径                                     |
+    | const std::string& model               | 语义角色标注模型路径                                                |
     +----------------------------------------+--------------------------------------------------------------------+
 
     返回值：
 
     返回一个指向词性标注器的指针。
 
-.. cpp:function:: int SRL_ReleaseResource()
+.. cpp:function:: int srl_release_resource()
 
     功能：
 
@@ -551,9 +551,8 @@
 
     销毁成功时返回0，否则返回-1
 
-.. cpp:function:: int DoSRL(const std::vector<std::string> & words, \
+.. cpp:function:: int srl_dosrl(const std::vector<std::string> & words, \
                             const std::vector<std::string> & POS, \
-                            const std::vector<std::string>& NEs, \
                             const std::vector< std::pair<int, std::string> >& parse, \
                             std::vector< \
                                 std::pair< \
@@ -579,8 +578,6 @@
     | const std::vector<std::string> & words   | 输入的词序列                                                                           |
     +------------------------------------------+----------------------------------------------------------------------------------------+
     | const std::vector<std::string> & postags | 输入的词性序列                                                                         |
-    +------------------------------------------+----------------------------------------------------------------------------------------+
-    | const std::vector<std::string> & nes     | 输入的命名实体序列                                                                     |
     +------------------------------------------+----------------------------------------------------------------------------------------+
     | | const std::vector<                     | | 输入的依存句法结果                                                                   |
     | |     std::pair<int, std::string>        | | 依存句法结果表示为长度为句子长的序列                                                 |
