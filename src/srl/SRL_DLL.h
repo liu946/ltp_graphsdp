@@ -27,7 +27,7 @@ SRL_DLL_API int SRL(
         const vector<string> &POSs,
         const vector<string> &NEs,
         const vector< pair<int, string> > &parse,
-        vector< pair< int, vector< pair<const char *, pair< int, int > > > > > &vecSRLResult
+        vector< pair< int, vector< pair<string, pair< int, int > > > > > &vecSRLResult
 );
 
 // Load Resources
@@ -46,12 +46,12 @@ SRL_DLL_API int DoSRL(
 );
 
 SRL_DLL_API int GetSRLResult_size(
-        vector< pair< int, vector< pair<const char *, pair< int, int > > > > > &vecSRLResult,
+        vector< pair< int, vector< pair<string, pair< int, int > > > > > &vecSRLResult,
         vector< pair< int, vector< pair<string, pair< int, int > > > > > &tmp_vecSRLResult);
 
 
 SRL_DLL_API int GetSRLResult(
-        vector< pair< int, vector< pair<const char *, pair< int, int > > > > > &vecSRLResult,
+        vector< pair< int, vector< pair<string, pair< int, int > > > > > &vecSRLResult,
         vector< pair< int, vector< pair<string, pair< int, int > > > > > &tmp_vecSRLResult);
 
 #endif

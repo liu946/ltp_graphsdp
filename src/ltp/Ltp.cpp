@@ -599,7 +599,7 @@ int LTP::srl(XML4NLP & xml) {
     vector<string>              vecPOS;
     vector<string>              vecNE;
     vector< pair<int, string> > vecParse;
-    vector< pair<int, vector< pair<const char *, pair< int, int > > > > > vecSRLResult;
+    vector< pair<int, vector< pair<string, pair< int, int > > > > > vecSRLResult;
 
     if (xml.GetWordsFromSentence(vecWord, i) != 0) {
       ERROR_LOG("in LTP::ner, failed to get words from xml");

@@ -5,7 +5,7 @@ int SRL(
         const vector<string> &POSs,
         const vector<string> &NEs,
         const vector< pair<int, string> > &parse,
-        vector< pair< int, vector< pair<const char *, pair< int, int > > > > > &vecSRLResult
+        vector< pair< int, vector< pair<string, pair< int, int > > > > > &vecSRLResult
         )
 {
     vecSRLResult.clear();

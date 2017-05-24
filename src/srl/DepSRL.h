@@ -12,11 +12,15 @@
 #define _DEP_SRL_
 
 #include "MyStruct.h"
-#include "SRLBaselineExt.h"
 #include <vector>
 #include <utility>
 #include <string>
-#include <maxent.h>
+
+#include "pp/config/PPConfig.h"
+#include "srl/config/SRLConfig.h"
+#include "pp/model/PPBiLSTMModel.h"
+#include "srl/model/SRLBiLSTMModel.h"
+#include "structure/SRLLookUpTable.h"
 
 class DepSRL {
 
@@ -65,34 +69,9 @@ class DepSRL {
 
         /* Produce DepSRL result for a sentence (LTPData interface)
          */
-        int GetSRLResult(
-                const LTPData     &ltpData,
-                const vector<int> &predicates,
-                vector< pair< int, vector< pair< string, pair< int, int > > > > > &vecSRLResult,
-                SRLBaselineExt * m_srlBaseline
-                );
 
-        string GetConfigXml();
-        string GetSelectFeats();
 
     private:
-        /* 1.Extract SRL Features from input
-         */
-        int ExtractSrlFeatures(
-                const LTPData     &ltpData,
-                const vector<int> &VecAllPredicates,
-                VecFeatForSent    &vecAllFeatures,
-                VecPosForSent     &vecAllPos,
-                SRLBaselineExt* m_srlBaseline
-                );
-
-        /* 2.Predict with the maxent library
-         */
-        int Predict(
-                VecFeatForSent &vecAllFeatures,
-                vector< vector< pair<string, double> > > &vecAllPairMaxArgs,
-                vector< vector< pair<string, double> > > &vecAllPairNextArgs
-                );
 
         /* 3.form the SRL result, based on predict result from maxent model
          */
@@ -111,23 +90,6 @@ class DepSRL {
         int RenameArguments(
                 vector< pair< int, vector< pair< string, pair< int, int > > > > > &vecSRLResult
                 );
-
-        /* get parents and relations in the dependent parse tree
-         */
-        void GetParAndRel(
-                const vector< pair<int, string> >& vecParser, 
-                vector<int>& vecParent, 
-                vector<string>& vecRelation) const;
-
-        /* Version 1: find verb (predicate to be tagged) in a sentence
-         */
-        void GetPredicateFromSentence(
-                const vector<string>& vecPos,
-                vector<int>& vecPredicate,SRLBaselineExt * m_srlBaseline) const;
-
-        /* Version 2: find predicates according to a MaxEnt model
-         */
-        void GetPredicateFromSentence(vector<int>& vecPredicate,SRLBaselineExt * m_srlBaselie) const;
 
         void ProcessOnePredicate(
                 const vector<string>& vecWords,
@@ -244,11 +206,21 @@ class DepSRL {
 
     private:
         bool                m_resourceLoaded;
-
-        string m_configXml;
-        string m_selectFeats;
-        maxent::ME_Model    *m_srlModel; // for role labeling
-        maxent::ME_Model    *m_prgModel; // for predicate recognition
+        PPBaseConf ppConfig;
+        SRLBaseConf srlConfig;
+        SRLBiLSTMModel * srl_model;
+        PPBiLSTMModel * pp_model;
+        SRLLookUpTable table1, table2;
+    private:
+        void manageConfigPath(ModelConf &config, const string &dirPath);
+        void generateOldPosStructure(const vector< pair<int, string> > &parse,
+                                     const vector<int> & predicate,
+                                     VecPosForSent & vecAllPos,
+                                     vector< vector< pair<string, double> > > & vecAllPairMaxArgs,
+                                     vector< vector< pair<string, double> > > & vecAllPairNextArgs);
+        inline int subTreeBegin(int index, const vector< pair<int, string> > &parse);
+        inline int subTreeEnd(int index, const vector< pair<int, string> > &parse);
+        inline bool isOnTree(int index, int root, const vector<pair<int, string> > &parse);
 };
 
 #endif

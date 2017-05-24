@@ -10,27 +10,52 @@
 
 
 #include "DepSRL.h"
-#include "FeatureExtractor.h"
-#include "Configuration.h"
+#include "ConstVar.h"
+#include "vector"
 #include "boost/bind.hpp"
 #include "boost/algorithm/string.hpp"
+#include "dynet/dynet.h"
+
+#include "pp/config/PPConfig.h"
+#include "srl/config/SRLConfig.h"
+
+#include "structure/DataSentence.h"
+#include "pp/extractor/ConverterSentenceToPPSampleGroup.h"
+#include "srl/extractor/ConverterSentenceToSRLBiLSTMSampleGroup.h"
+#include "structure/Prediction.h"
+
+using namespace std;
 
 // Load necessary resources into memory
 int DepSRL::LoadResource(const string &ConfigDir)
 {
-    m_configXml = ConfigDir + "/Chinese.xml";
-    m_selectFeats = ConfigDir + "/srl.cfg";
-    // load srl and prg model
-    m_srlModel = new maxent::ME_Model;
-    bool tag = m_srlModel->load(ConfigDir + "/srl.model");
-    if(!tag) {
-      return 0;
-    }
+    dynet::DynetParams params;
+    params.mem_descriptor = "2000";
+    dynet::initialize(params);
 
-    m_prgModel = new maxent::ME_Model;
-    tag = m_prgModel->load(ConfigDir + "/prg.model");
-    if(!tag) {
-      return 0;
+    ppConfig.init(ConfigDir + "/pp.config"); manageConfigPath(ppConfig, ConfigDir);
+    srlConfig.init(ConfigDir + "/srl.config"); manageConfigPath(srlConfig, ConfigDir);
+    cout << ppConfig.toString("\n", "->") << endl;
+    cout << srlConfig.toString("\n", "->") << endl;
+
+    pp_model = new PPBiLSTMModel(ppConfig, table1);
+    pp_model->loadLookUpTable();
+    table1.freeze();
+    pp_model->init();
+
+    srl_model = new SRLBiLSTMModel(srlConfig, table2);
+    srl_model->loadLookUpTable();
+    table2.freeze();
+    srl_model->init();
+
+    // load model
+    if(!pp_model->load()) {
+      std::cerr << "can't load model file " << ppConfig.model.c_str();
+      exit(0);
+    }
+    if(!srl_model->load()) {
+      std::cerr << "can't load model file " << srlConfig.model.c_str();
+      exit(0);
     }
 
     m_resourceLoaded = true;
@@ -41,21 +66,14 @@ int DepSRL::LoadResource(const string &ConfigDir)
 // Release all resources
 int DepSRL::ReleaseResource()
 {
-    delete m_srlModel;
-    delete m_prgModel;
+    delete srl_model;
+    delete pp_model;
 
     m_resourceLoaded = false;
 
     return 1;
 }
-string DepSRL::GetConfigXml()
-{
-    return m_configXml;
-}
-string DepSRL::GetSelectFeats()
-{
-    return m_selectFeats;
-}
+
 int DepSRL::GetSRLResult(
         const vector<string> &words,
         const vector<string> &POSs,
@@ -64,157 +82,100 @@ int DepSRL::GetSRLResult(
         vector< pair< int, vector< pair< string, pair< int, int > > > > > &vecSRLResult
         )
 {
-    LTPData ltpData;
-    ltpData.vecWord = words;
-    ltpData.vecPos  = POSs;
-    ltpData.vecNe   = NEs;
-
-    GetParAndRel(parse, ltpData.vecParent, ltpData.vecRelation);
-
-    // construct a DataPreProcess instance
-    DataPreProcess* dataPreProc = new DataPreProcess(&ltpData);
-
-    SRLBaselineExt * m_srlBaseline=new SRLBaselineExt(GetConfigXml(),GetSelectFeats());
-    // extract features !
-    m_srlBaseline->setDataPreProc(dataPreProc);
-
-    // GetPredicateFromSentence(POSs,predicates);
-    vector<int> predicates;
-    GetPredicateFromSentence(predicates,m_srlBaseline);
-
-    // return GetSRLResult(words, POSs, NEs, parse, predicates, vecSRLResult);
-    return GetSRLResult(ltpData, predicates, vecSRLResult,m_srlBaseline);
-}
-
-// produce DepSRL result for a sentence
-/*
-int DepSRL::GetSRLResult(
-        const vector<string> &words,
-        const vector<string> &POSs,
-        const vector<string> &NEs,
-        const vector< pair<int, string> > &parse,
-        const vector<int> &predicates,
-        vector< pair< int, vector< pair< string, pair< int, int > > > > > &vecSRLResult
-        )
-{
-    LTPData ltpData;
-    ltpData.vecWord = words;
-    ltpData.vecPos  = POSs;
-    ltpData.vecNe   = NEs;
-
-    // transform LTP parse result to parent-relation format
-    GetParAndRel(parse, ltpData.vecParent, ltpData.vecRelation);
-
-    return GetSRLResult(ltpData, predicates, vecSRLResult);
-}
-*/
-
-// produce DepSRL result for a sentence
-int DepSRL::GetSRLResult(
-        const LTPData     &ltpData,
-        const vector<int> &predicates,
-        vector< pair< int, vector< pair< string, pair< int, int > > > > > &vecSRLResult,
-        SRLBaselineExt * m_srlBaseline) {
     vecSRLResult.clear();
-
-    if ( !m_resourceLoaded ) {
-        cerr<<"Resources not loaded."<<endl;
-        return 0;
+    // todo construct a Sentence instance
+    assert(words.size() == POSs.size());
+    assert(words.size() == parse.size());
+    DataSentence sentence;
+    for (int j = 0; j < words.size(); ++j) {
+        Word word(j, words[j], words[j], POSs[j], parse[j].first, NIL_LABEL, (j <= parse[j].first ? "before" : "after"), parse[j].second, NIL_LABEL);
+        sentence.words.push_back(word);
     }
-
-    if ( !predicates.size() ) {
+    // pp
+    {
+        // todo construct pp sample
+        ConverterSentenceToPPSampleGroup conv_stnToPPSamp(table1);
+        conv_stnToPPSamp.convert(sentence);
+        PPBiLSTMSampleGroup& smp = conv_stnToPPSamp.getResult()[0];
+        // todo pp prediction
+        ComputationGraph hg;
+        vector<Expression> adists = pp_model->label(hg, smp);
+        vector<Prediction> results = pp_model->ExtractResults(hg, adists);
+        // todo pp writeback
+        assert(smp.samples.size() == results.size());
+        for (int j = 0; j < smp.size(); ++j) {
+            smp.samples[j].isPredicate = (unsigned int)(results[j][0].first || results[j][1].second > 0.1);
+        }
+        conv_stnToPPSamp.iconvOne(sentence, smp, 0);
+    }
+    if ( !sentence.predicateInnerIndex.size() ) {
         // skip all processing if no predicate
         return 1;
     }
-
-    VecFeatForSent vecAllFeatures;   //the features interface for SRLBaseline
-    VecPosForSent  vecAllPos;        //the constituent position vector
+    // srl
     vector< vector< pair<string, double> > > vecAllPairMaxArgs;
     vector< vector< pair<string, double> > > vecAllPairNextArgs;
+    {
+        // todo construct srl sample
+        ConverterSentenceToSRLBiLSTMSampleGroup conv_stnToSRLSamp(table2);
+        conv_stnToSRLSamp.convert(sentence);
+        vector<SRLBiLSTMSampleGroup>& smps = conv_stnToSRLSamp.getResult();
+        // todo srl prediction
+        for (int k = 0; k < smps.size(); ++k) {
+            ComputationGraph hg;
+            vector<Expression> adists = srl_model->label(hg, smps[k]);
+            vector<Prediction> results = srl_model->ExtractResults(hg, adists);
+            // todo srl writeback
+            assert(smps[k].samples.size() == results.size());
+            vector< pair<string, double> > vecPairMaxArgs;
+            vector< pair<string, double> > vecPairNextArgs;
+            for (int j = 0; j < smps[k].samples.size(); ++j) {
+                smps[k].samples[j].label = results[j][0].first;
+                vecPairMaxArgs.push_back(make_pair(table2.label.getStringByIndex(results[j][0].first), results[j][0].second));
+                vecPairNextArgs.push_back(make_pair(table2.label.getStringByIndex(results[j][1].first), results[j][1].second));
+            }
+            vecAllPairMaxArgs.push_back(vecPairMaxArgs);
+            vecAllPairNextArgs.push_back(vecPairNextArgs);
+        }
+        //conv_stnToSRLSamp.iconv(&smps);
+    }
+    // todo formResult
+    vector < vector < pair < int, int > > > vecAllPos;
+    generateOldPosStructure(parse, sentence.predicateInnerIndex, vecAllPos, vecAllPairMaxArgs, vecAllPairNextArgs);
 
-    // extract features
-    if (!ExtractSrlFeatures(ltpData, predicates,vecAllFeatures,vecAllPos,m_srlBaseline))
-        return 0;
-
-    // predict
-    if (!Predict(vecAllFeatures,vecAllPairMaxArgs,vecAllPairNextArgs))
-        return 0;
-
-    // form the result
-    if (!FormResult(
-                ltpData.vecWord,ltpData.vecPos, predicates,vecAllPos,
-                vecAllPairMaxArgs,vecAllPairNextArgs,
-                vecSRLResult
-                )
-       ) return 0;
-
+    if (!FormResult(words, POSs, sentence.predicateInnerIndex, vecAllPos,
+            vecAllPairMaxArgs,vecAllPairNextArgs,
+            vecSRLResult)) return 0;
+    // todo post
     // rename arguments to short forms (ARGXYZ->AXYZ)
     if (!RenameArguments(vecSRLResult)) return 0;
-    delete m_srlBaseline;
-
     return 1;
 }
 
-int DepSRL::ExtractSrlFeatures(
-        const LTPData     &ltpData,
-        const vector<int> &VecAllPredicates,
-        VecFeatForSent    &vecAllFeatures,
-        VecPosForSent     &vecAllPos,
-        SRLBaselineExt* m_srlBaseline
-        )
-{
-    vecAllFeatures.clear();
-    vecAllPos.clear();
-
-    /*
-    // construct a DataPreProcess instance
-    DataPreProcess* dataPreProc = new DataPreProcess(&ltpData);
-
-    // extract features !
-    m_srlBaseline->setDataPreProc(dataPreProc);
-    */
-
-    m_srlBaseline->SetPredicate(VecAllPredicates);
-    m_srlBaseline->ExtractSrlFeatures(vecAllFeatures, vecAllPos);
-
-    return 1;
-}
-
-int DepSRL::Predict(
-        VecFeatForSent &vecAllFeatures,
-        vector< vector< pair<string, double> > > &vecAllPairMaxArgs,
-        vector< vector< pair<string, double> > > &vecAllPairNextArgs
-        )
-{
-    vector< pair<string, double> > vecPredPairMaxArgs;
-    vector< pair<string, double> > vecPredPairNextArgs;
-
-    for(VecFeatForSent::iterator predicate_iter = vecAllFeatures.begin();
-            predicate_iter != vecAllFeatures.end();
-            ++predicate_iter
-       ){// for each predicate
-        vecPredPairMaxArgs.clear();
-        vecPredPairNextArgs.clear();
-
-        for(VecFeatForVerb::iterator position_iter = (*predicate_iter).begin();
-                position_iter != (*predicate_iter).end();
-                ++position_iter
-           ) {// for each position
-            vector<pair<string,double> > outcome;
-
-            maxent::ME_Sample sample(*position_iter);
-            m_srlModel->predict(sample, outcome);
-            // m_srlModel->eval_all((*position_iter),outcome);
-
-            vecPredPairMaxArgs.push_back(outcome[0]);
-            vecPredPairNextArgs.push_back(outcome[1]);
-        }
-
-        vecAllPairMaxArgs.push_back(vecPredPairMaxArgs);
-        vecAllPairNextArgs.push_back(vecPredPairNextArgs);
+void DepSRL::generateOldPosStructure(const vector< pair<int, string> > &parse,
+                                     const vector<int> & predicate,
+                                     vector< vector < pair < int, int > > > & vecAllPos,
+                                     vector< vector< pair<string, double> > > & vecAllPairMaxArgs,
+                                     vector< vector< pair<string, double> > > & vecAllPairNextArgs
+    ) {
+    vecAllPos.clear(); vecAllPos.resize(predicate.size());
+    vector<pair<int, int>> allWordsSubTreePos;
+    for (int j = 0; j < parse.size(); ++j) {
+        allWordsSubTreePos.push_back(make_pair(subTreeBegin(j, parse), subTreeEnd(j, parse)));
     }
-
-    return 1;
+    for (int k = 0; k < predicate.size(); ++k) {
+        vector< pair<string, double> > vecPredMaxArgs;
+        vector< pair<string, double> > vecPredNextArgs;
+        for (int j = 0; j < allWordsSubTreePos.size(); ++j) {
+            if (!(allWordsSubTreePos[j].first <= predicate[k] && allWordsSubTreePos[j].second >= predicate[k])) {
+                vecAllPos[k].push_back(allWordsSubTreePos[j]);
+                vecPredMaxArgs.push_back(vecAllPairMaxArgs[k][j]);
+                vecPredNextArgs.push_back(vecAllPairNextArgs[k][j]);
+            }
+        }
+        vecAllPairMaxArgs[k] = vecPredMaxArgs;
+        vecAllPairNextArgs[k] = vecPredNextArgs;
+    }
 }
 
 int DepSRL::FormResult(
@@ -318,7 +279,7 @@ void DepSRL::RemoveNullLabel(const vector< pair<string, double> >& vecPairMaxArg
     vecPairNNLPS.clear();
     for (int index = 0; index < vecPairMaxArgs.size(); index++)
     {
-        if ( vecPairMaxArgs.at(index).first.compare(S_NULL_ARG) )
+        if ( vecPairMaxArgs.at(index).first.compare(NIL_LABEL) )
         {
             vecPairNNLMax.push_back(vecPairMaxArgs.at(index));
             vecPairNNLNext.push_back(vecPairNextArgs.at(index));
@@ -462,58 +423,6 @@ void DepSRL::TransVector(const vector<const char*>& vecInStr,
 }
 */
 
-void DepSRL::GetParAndRel(const vector< pair<int, string> >& vecParser, 
-        vector<int>& vecParent, 
-        vector<string>& vecRelation) const
-{
-    vector< pair<int, string> >::const_iterator itParser;
-    pair<int, string> pairParser;
-
-    itParser = vecParser.begin();
-    while(itParser != vecParser.end())
-    {
-        pairParser = *itParser;
-        vecParent.push_back(pairParser.first);
-        vecRelation.push_back(pairParser.second);
-        ++ itParser;
-    }
-}
-
-void DepSRL::GetPredicateFromSentence(const vector<string>& vecPos, 
-        vector<int>& vecPredicate,SRLBaselineExt* m_srlBaseline) const
-{
-    int index;
-    vector<string>::const_iterator itPos;
-    index = 0;
-    itPos = vecPos.begin();
-    while (itPos != vecPos.end())
-    {
-        if (m_srlBaseline->isVerbPOS(*itPos))
-        {
-            vecPredicate.push_back(index);
-        }
-
-        ++ index;
-        ++ itPos;
-    }
-}
-
-void DepSRL::GetPredicateFromSentence(vector<int>& vecPredicate,SRLBaselineExt * m_srlBaseline) const
-{
-    /* extract features for each word in sentence */
-    vector< vector<string> > vecFeatures;
-    m_srlBaseline->ExtractPrgFeatures(vecFeatures);
-
-    /* predict */
-    for (size_t i = 0; i < vecFeatures.size(); ++i)
-    {
-        maxent::ME_Sample sample(vecFeatures[i]);
-        vector< pair<string, double> > prediction;
-        m_prgModel->predict(sample, prediction);
-        if (prediction[0].first == "Y")
-            vecPredicate.push_back(i);
-    }
-}
 
 void DepSRL::PostProcess(const vector<string>& vecPos,
         const vector< pair<int, int> >& vecPairPS,
@@ -896,4 +805,29 @@ int DepSRL::RenameArguments(
     }
 
     return 1;
+}
+
+void DepSRL::manageConfigPath(ModelConf &config, const string &dirPath) {
+    config.model = dirPath + '/' + config.model;
+    config.indexPath = dirPath + '/' + config.indexPath;
+}
+
+inline int DepSRL::subTreeBegin(int index, const vector<pair<int, string> > &parse) {
+    int minSubTreeIndex = index;
+    while (isOnTree(minSubTreeIndex - 1, index, parse)) minSubTreeIndex--;
+    return minSubTreeIndex;
+}
+
+inline int DepSRL::subTreeEnd(int index, const vector<pair<int, string> > &parse) {
+    int maxSubTreeIndex = index;
+    while (isOnTree(maxSubTreeIndex + 1, index, parse)) maxSubTreeIndex++;
+    return maxSubTreeIndex;
+}
+
+inline bool DepSRL::isOnTree(int index, int root, const vector<pair<int, string> > &parse) {
+    for (; 0 <= index && index < parse.size(); index = parse[index].first) {
+        if (index == root) return true;
+    }
+
+    return false;
 }

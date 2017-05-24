@@ -58,7 +58,7 @@ int DoSRL(
 }
 
 int GetSRLResult_size(
-        vector< pair< int, vector< pair<const char *, pair< int, int > > > > > &vecSRLResult,
+        vector< pair< int, vector< pair<string, pair< int, int > > > > > &vecSRLResult,
         vector< pair< int, vector< pair<string, pair< int, int > > > > > &tmp_vecSRLResult)
 {
     if (vecSRLResult.size() != tmp_vecSRLResult.size()) {
@@ -73,7 +73,7 @@ int GetSRLResult_size(
 }
 
 int GetSRLResult(
-        vector< pair< int, vector< pair<const char *, pair< int, int > > > > > &vecSRLResult,
+        vector< pair< int, vector< pair<string, pair< int, int > > > > > &vecSRLResult,
         vector< pair< int, vector< pair<string, pair< int, int > > > > > &tmp_vecSRLResult)
 {
     if (vecSRLResult.size() != tmp_vecSRLResult.size()) {
