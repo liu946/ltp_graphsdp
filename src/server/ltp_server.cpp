@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
 #endif
 
     ("srl-data", value<std::string>(),
-     "The path to the SRL model directory [default=ltp_data/srl_data/].")
+     "The path to the srl model [default=ltp_data/pisrl.model].")
     ("log-level", value<int>(), "The log level:\n"
      "- 0: TRACE level\n"
      "- 1: DEBUG level\n"
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
   INFO_LOG("semantic parser source after directory: \"%s\"" ,semparser_model.c_str());
 #endif
 
-  std::string srl_data= "ltp_data/srl/";
+  std::string srl_data= "ltp_data/pisrl.model";
   if (vm.count("srl-data")) {
     srl_data = vm["srl-data"].as<std::string>();
   }

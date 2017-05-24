@@ -14,13 +14,13 @@ int isLegalInput(const vector<string> &words, const vector<string> &POSs, const 
 
 
 // Load Resources
-int SRL_LoadResource(const string &ConfigDir)
+int srl_load_resource(const string &modelFile)
 {
-    return g_depSRL.LoadResource(ConfigDir);
+    return g_depSRL.LoadResource(modelFile);
 }
 
 // Release Resources
-int SRL_ReleaseResource()
+int srl_release_resource()
 {
     return g_depSRL.ReleaseResource();
 }
@@ -28,11 +28,11 @@ int SRL_ReleaseResource()
 /**
  *
  */
-int SRL(
+int srl_dosrl(
         const vector<string> &words,
         const vector<string> &POSs,
-        const vector< pair<int, string> > &parse,
-        vector< pair< int, vector< pair<string, pair< int, int > > > > > &vecSRLResult
+        const vector<pair<int, string> > &parse,
+        vector<pair<int, vector<pair<string, pair<int, int> > > > > &vecSRLResult
 ) {
   vecSRLResult.clear();
   if (!isLegalInput(words, POSs, parse)) return -1;

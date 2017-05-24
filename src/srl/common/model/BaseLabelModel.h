@@ -18,6 +18,8 @@
 
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
 #include <fstream>
 #include "model/LookupModelBuilder.h"
 
@@ -41,6 +43,36 @@ public:
     oa << dict; oa << model;
     out.close();
     debug.debug("model saved in '%s'", config.model.c_str());
+  }
+
+  void save(boost::archive::binary_oarchive & oa) {
+    saveDict(oa); saveModel(oa);
+  }
+
+  void saveDict(boost::archive::binary_oarchive & oa) {
+    oa << dict;
+    debug.debug("dict saved in '%s'", config.model.c_str());
+  }
+
+  void saveModel(boost::archive::binary_oarchive & oa) {
+    oa << model;
+    debug.debug("model saved in '%s'", config.model.c_str());
+  }
+
+  bool load(boost::archive::binary_iarchive & ia) {
+    return loadDict(ia) && loadModel(ia);
+  }
+
+  bool loadDict(boost::archive::binary_iarchive & ia) {
+    ia >> dict;
+    debug.debug("dict loaded in '%s'", config.model.c_str());
+    return true;
+  }
+
+  bool loadModel(boost::archive::binary_iarchive & ia) {
+    ia >> model;
+    debug.debug("model loaded in '%s'", config.model.c_str());
+    return true;
   }
 
   bool isModelExist() {

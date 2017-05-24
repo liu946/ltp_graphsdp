@@ -34,6 +34,7 @@ add_subdirectory(Pi)
 add_subdirectory(Srl)
 set(LIBS ${LIBS} srl_srl_static_lib)
 
+add_subdirectory(tool)
 
 set (srl_SRC
         DepSRL.cpp

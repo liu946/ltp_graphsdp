@@ -6,6 +6,7 @@
 #define Srl_Pi_CONFIG_H
 
 #include "config/ModelConf.h"
+#include "boost/serialization/access.hpp"
 
 class SrlPiBaseConfig : public virtual ModelConf {
 public:
@@ -29,6 +30,18 @@ public:
     registerConf<unsigned>("layers"         , UNSIGNED, layers           , "dynetRnnBuilder layers"    , 1);
 
     registerConf<string>  ("embeding" , STRING,   embeding , "embeding", "");
+  }
+
+  friend class boost::serialization::access;
+  template <class Archive>
+  void serialize(Archive &ar, const unsigned int) {
+    ar & word_dim;
+    ar & emb_dim;
+    ar & pos_dim;
+    ar & rel_dim;
+    ar & lstm_input_dim;
+    ar & lstm_hidden_dim;
+    ar & layers;
   }
 };
 

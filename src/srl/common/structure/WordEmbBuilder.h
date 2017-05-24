@@ -8,6 +8,8 @@
 #include <extractor/ExtractorFileToWordEmb.h>
 #include "string"
 #include "iostream"
+#include <unordered_map>
+#include <assert.h>
 using namespace std;
 using namespace extractor;
 

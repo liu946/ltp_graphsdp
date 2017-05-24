@@ -6,7 +6,6 @@
 #define PROJECT_CONVERTERFILECONTEXTTOWORDEMB_H
 
 #include "structure/DataFileContext.h"
-#include "structure/WordEmbBuilder.h"
 #include "extractor/AbstractConverter.h"
 #include "base/debug.h"
 #include "unordered_map"

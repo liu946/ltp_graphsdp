@@ -13,54 +13,35 @@
 #include "extractor/ExtractorFileToWordEmb.h"
 #include "vector"
 #include "dynet/dynet.h"
+#include "boost/archive/binary_iarchive.hpp"
+#include "boost/archive/binary_oarchive.hpp"
 
 using namespace std;
 
 // Load necessary resources into memory
-int DepSRL::LoadResource(const string &ConfigDir)
+int DepSRL::LoadResource(const string &modelFile)
 {
     dynet::DynetParams params;
     params.mem_descriptor = "2000";
     dynet::initialize(params);
 
-    piConfig.init(ConfigDir + "/pi.config"); manageConfigPath(piConfig, ConfigDir); piConfig.embeding = ConfigDir + '/' + piConfig.embeding;
-    srlConfig.init(ConfigDir + "/srl.config"); manageConfigPath(srlConfig, ConfigDir); srlConfig.embeding = ConfigDir + '/' + srlConfig.embeding;
-    cout << piConfig.toString("\n", "->") << endl;
-    cout << srlConfig.toString("\n", "->") << endl;
-
-    // init embedding for both
-    bool useSelfEmb = false;
-
-    if (piConfig.embeding == srlConfig.embeding) {
-      ExtractorFileToWordEmb conv;
-      conv.init(piConfig.embeding);
-      embedding = conv.run();
-    } else {
-      useSelfEmb = true;
-    }
-
-
+    ifstream in(modelFile);
+    if (!in) { return  -1;}
+    boost::archive::binary_iarchive ia(in);
+    ia >> piConfig;
+    ia >> srlConfig;
+    ia >> embedding;
     pi_model = new PiModel(piConfig);
-    pi_model->loadDict();
+    pi_model->loadDict(ia);
     pi_model->init();
-    if (!pi_model->load())
-      return -1;
-    if(useSelfEmb)
-      pi_model->initEmbedding();
-    else
-      pi_model->initEmbedding(embedding);
-
+    pi_model->loadModel(ia);
+    pi_model->initEmbedding(embedding);
     srl_model = new SrlSrlModel(srlConfig);
-    srl_model->loadDict();
+    srl_model->loadDict(ia);
     srl_model->init();
-    if (!srl_model->load())
-      return -1;
-    if(useSelfEmb)
-      srl_model->initEmbedding();
-    else
-      srl_model->initEmbedding(embedding);
+    srl_model->loadModel(ia);
+    srl_model->initEmbedding(embedding);
     m_resourceLoaded = true;
-
     return 0;
 }
 
@@ -169,16 +150,15 @@ void DepSRL::ProcessOnePredicate(
   // pass 当之前的arg概率小于0.5，而且该arg概率更大时，插入重复论元
 
   //step4. post process
-  // QTYArgsProcess(vecPos, vecResultForOnePredicate);
+   QTYArgsProcess(vecPos, vecResultForOnePredicate);
 }
 
 void DepSRL::ProcessCollisions(int intPredicates, vector<pair<string, pair<int, int> > > &results) {
   for (int j = 0; j < results.size(); ++j) {
     for (int k = 0; k < results.size(); ++k) {
-      if (j == k) continue;
       if ((results[k].second.first <= intPredicates && intPredicates <= results[k].second.second)
           ||
-          (results[j].second.first <= results[k].second.first && results[k].second.second <= results[j].second.second)) {
+          (j != k && results[j].second.first <= results[k].second.first && results[k].second.second <= results[j].second.second)) {
         // k including predicate or j including k
         // remove k
         results.erase(results.begin() + k);

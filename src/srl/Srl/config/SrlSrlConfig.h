@@ -32,6 +32,21 @@ public:
 
     registerConf<string>  ("embeding" , STRING,   embeding , "embeding", "");
   }
+
+
+  friend class boost::serialization::access;
+  template <class Archive>
+  void serialize(Archive &ar, const unsigned int) {
+    ar & word_dim;
+    ar & emb_dim;
+    ar & pos_dim;
+    ar & rel_dim;
+    ar & position_dim;
+    ar & lstm_input_dim;
+    ar & lstm_hidden_dim;
+    ar & hidden_dim;
+    ar & layers;
+  }
 };
 
 class SrlSrlTrainConfig : public virtual SrlSrlBaseConfig, public virtual LabelModelTrainerConf {

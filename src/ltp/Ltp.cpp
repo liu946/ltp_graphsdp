@@ -60,7 +60,7 @@ bool LTP::load(const std::string& last_stage,
 #ifdef USESDPTREE
 	  const std::string& semantic_parser_model_file,
 #endif
-    const std::string& srl_model_dir,
+    const std::string& srl_model_file,
     const std::string& lstm_semantic_parser_dir) {
 
   size_t target_mask = 0;
@@ -75,8 +75,7 @@ bool LTP::load(const std::string& last_stage,
   } else if (last_stage == LTP_SERVICE_NAME_SEMDEPPARSE) {
     target_mask = (kActiveSegmentor | kActivePostagger | kActiveSemanticParser);
   } else if (last_stage == LTP_SERVICE_NAME_SRL) {
-    target_mask =
-        (kActiveSegmentor|kActivePostagger|kActiveNER|kActiveParser|kActiveSRL);
+    target_mask = (kActiveSegmentor|kActivePostagger|kActiveParser|kActiveSRL);
   } else if (last_stage == "all") {
     target_mask =
       (kActiveSegmentor|kActivePostagger|kActiveNER|kActiveParser|
@@ -144,7 +143,7 @@ bool LTP::load(const std::string& last_stage,
   }
   
   if (target_mask & kActiveSRL) {
-    if ( 0 != _resource.LoadSRLResource(srl_model_dir)) {
+    if ( 0 != _resource.LoadSRLResource(srl_model_file)) {
       ERROR_LOG("in LTP::srl, failed to load srl resource");
       return false;
     }
@@ -621,7 +620,7 @@ int LTP::srl(XML4NLP & xml) {
       return kReadXmlError;
     }
 
-    if (0 != SRL(vecWord, vecPOS, vecParse, vecSRLResult)) {
+    if (0 != srl_dosrl(vecWord, vecPOS, vecParse, vecSRLResult)) {
       ERROR_LOG("in LTP::srl, failed to perform srl on sent. #%d", i+1);
       return kSRLError;
     }
