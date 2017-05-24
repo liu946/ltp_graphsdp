@@ -53,7 +53,7 @@ int DepSRL::LoadResource(const string &ConfigDir)
     srl_model = new SrlSrlModel(srlConfig);
     srl_model->loadDict();
     srl_model->init();
-    if (!pi_model->load())
+    if (!srl_model->load())
       return -1;
     if(useSelfEmb)
       srl_model->initEmbedding();
@@ -105,8 +105,8 @@ int DepSRL::GetSRLResult(
     }
 
     if (!FormResult(words, POSs, sentence.getPredicateList(), sentence, vecSRLResult))
-      return 0;
-    return 1;
+      return -1;
+    return 0;
 }
 
 int DepSRL::FormResult(
@@ -163,23 +163,26 @@ void DepSRL::ProcessOnePredicate(
   }
 
   //step2. process the collision
-  ProcessCollisions(vecResultForOnePredicate);
+  ProcessCollisions(intPredicates, vecResultForOnePredicate);
 
   //step3. process the same tags
   // pass 当之前的arg概率小于0.5，而且该arg概率更大时，插入重复论元
 
   //step4. post process
-  QTYArgsProcess(vecPos, vecResultForOnePredicate);
+  // QTYArgsProcess(vecPos, vecResultForOnePredicate);
 }
 
-void DepSRL::ProcessCollisions(vector<pair<string, pair<int, int> > > &results) {
+void DepSRL::ProcessCollisions(int intPredicates, vector<pair<string, pair<int, int> > > &results) {
   for (int j = 0; j < results.size(); ++j) {
     for (int k = 0; k < results.size(); ++k) {
       if (j == k) continue;
-      if (results[j].second.first <= results[k].second.first && results[k].second.second <= results[j].second.second) {
-        // j including k, remove k
+      if ((results[k].second.first <= intPredicates && intPredicates <= results[k].second.second)
+          ||
+          (results[j].second.first <= results[k].second.first && results[k].second.second <= results[j].second.second)) {
+        // k including predicate or j including k
+        // remove k
         results.erase(results.begin() + k);
-        ProcessCollisions(results);
+        ProcessCollisions(intPredicates, results);
         return;
       }
     }

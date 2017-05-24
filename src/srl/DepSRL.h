@@ -77,7 +77,7 @@ class DepSRL {
     private:
         /*-----for form result-----*/
         void GetChildArea(SrlPiSample &sentence, vector<pair<int, int>> &childArea);
-        void ProcessCollisions(vector< pair< string, pair< int, int > > > &ResultForOnePredicate);
+        void ProcessCollisions(int intPredicates, vector< pair< string, pair< int, int > > > &ResultForOnePredicate);
         /*-----for form result-----*/
     private:
         /*-------------------------for post process-----------------------------*/
