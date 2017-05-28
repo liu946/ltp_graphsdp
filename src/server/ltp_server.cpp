@@ -77,8 +77,8 @@ int main(int argc, char *argv[]) {
      "The path to the original semparser model [default=ltp_data/semparser.model].")
 #endif
 
-    ("srl-data", value<std::string>(),
-     "The path to the SRL model directory [default=ltp_data/srl_data/].")
+    ("srl-model", value<std::string>(),
+     "The path to the srl model [default=ltp_data/pisrl.model].")
     ("log-level", value<int>(), "The log level:\n"
      "- 0: TRACE level\n"
      "- 1: DEBUG level\n"
@@ -177,9 +177,9 @@ int main(int argc, char *argv[]) {
   INFO_LOG("semantic parser source after directory: \"%s\"" ,semparser_model.c_str());
 #endif
 
-  std::string srl_data= "ltp_data/srl/";
-  if (vm.count("srl-data")) {
-    srl_data = vm["srl-data"].as<std::string>();
+  std::string srl_model= "ltp_data/pisrl.model";
+  if (vm.count("srl-model")) {
+    srl_model = vm["srl-model"].as<std::string>();
   }
 
   int log_level = LTP_LOG_INFO;
@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
 #ifdef USESDPTREE
                    semparser_model,
 #endif
-                   srl_data,
+                   srl_model,
                    lstm_semparser_data);
   if (!engine->loaded()) {
     ERROR_LOG("Failed to setup LTP engine.");

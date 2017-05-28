@@ -34,4 +34,4 @@ target_link_libraries (ltp_server
     boost_serialization_static_lib
     dl
     dynet
-    jsoncpp)
+    jsoncpp_lib_static)

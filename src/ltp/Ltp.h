@@ -31,7 +31,7 @@ enum ErrorCodes {
   kParserError,           /*< Failed to perform parsing */
   kSemanticParserError,	  /*< Failed to perform semanticparsing */
   kNERError,              /*< Failed to perform NER     */
-  kSRLError,              /*< Failed to perform SRL     */
+  kSRLError,              /*< Failed to perform srl     */
   kEncodingError,         /*< Sentence encoding not in UTF-8 */
   kXmlParseError,         /*< Input xml is not well formatted */
   kSentenceTooLongError,  /*< More than 300 characters or 70 words */
@@ -151,7 +151,7 @@ private:
 #ifdef USESDPTREE
 	     const std::string& semantic_parser_dir,
 #endif
-       const std::string& srl_model_dir,
+       const std::string& srl_model_file,
        const std::string& lstm_semantic_parser_dir);
 
 private:

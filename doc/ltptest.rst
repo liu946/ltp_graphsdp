@@ -25,7 +25,7 @@ LTP提供的模型包括:
 +----------------------------+------------------------------+
 | :file:`parser.model`       | 依存句法分析模型，单文件     |
 +----------------------------+------------------------------+
-| :file:`srl_data/`          | 语义角色标注模型，多文件     |
+| :file:`pisrl.model`        | 语义角色标注模型，单文件     |
 +----------------------------+------------------------------+
 
 
@@ -65,7 +65,7 @@ ltp_test主程序
                               ].
       --parser-model arg      The path to the parser model 
                               [default=ltp_data/parser.model].
-      --srl-data arg          The path to the SRL model directory 
+      --srl-model arg         The path to the srl model directory
                               [default=ltp_data/srl_data/].
       --debug-level arg       The debug level.
       -h [ --help ]           Show help information

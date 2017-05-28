@@ -164,7 +164,7 @@ Named entity recognition
 
 Graph-based Dependency parser
 
-* `int SRL();`
+* `int srl();`
 
 Semantic role labeling
 

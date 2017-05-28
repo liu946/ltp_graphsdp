@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
      "The path to the parser model [default=ltp_data/parser.model].")
 
     ("sdp-model", value<std::string>(),
-     "The path to the lstm semantic parser model directory [default=ltp_data/sdp.model].")
+     "The path to the lstm semantic parser model [default=ltp_data/sdp.model].")
 
 #ifdef USESDPTREE
     ("semparser-model", value<std::string>(),
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
 #endif
 
     ("srl-data", value<std::string>(),
-     "The path to the SRL model directory [default=ltp_data/srl_data/].")
+     "The path to the srl model directory [default=ltp_data/pisrl.model].")
     ("debug-level", value<int>(), "The debug level.")
     ("help,h", "Show help information");
 
@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
   }
 #endif
 
-  std::string srl_data= "ltp_data/srl/";
+  std::string srl_data= "ltp_data/pisrl.model";
   if (vm.count("srl-data")) {
     srl_data = vm["srl-data"].as<std::string>();
   }
