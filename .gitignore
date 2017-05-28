@@ -42,6 +42,7 @@ tools/train/
 ###############
 new_ltp_data/
 ltp_data/
+ltp_data
 
 ##################
 # running folder #
