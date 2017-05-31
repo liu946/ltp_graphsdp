@@ -7,6 +7,8 @@
 #include <map>
 #include "tinythread.h"
 
+using namespace std;
+
 class Dispatcher {
 public:
   Dispatcher(void* engine, std::istream& is, std::ostream& os):
