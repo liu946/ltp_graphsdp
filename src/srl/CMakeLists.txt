@@ -36,7 +36,6 @@ set (srl_SRC
         SRL_DLL.h)
 
 
-message(${LIBS})
 add_library (srl_static_lib STATIC ${srl_SRC})
 target_link_libraries (srl_static_lib dynet ${LIBS})
 
