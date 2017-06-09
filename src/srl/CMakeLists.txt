@@ -4,8 +4,6 @@ include_directories (.
         ${THIRDPARTY_DIR}/dynet
         )
 
-link_directories(${THIRDPARTY_DIR}/dynet/build/dynet) # -L
-
 set(LIBS ${LIBS} boost_program_options_static_lib boost_serialization_static_lib)
 
 add_subdirectory(include)
