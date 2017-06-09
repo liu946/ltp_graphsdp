@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
   if (vm.count("parser-model")) {
     parser_model= vm["parser-model"].as<std::string>();
   }
-  INFO_LOG("parser model after vm :\"%s\"", parser_model.c_str());
+  //INFO_LOG("parser model after vm :\"%s\"", parser_model.c_str());
 
 
   std::string lstm_semparser_data = "ltp_data/sdp.model";
@@ -496,12 +496,14 @@ static int Service(struct mg_connection *conn) {
     if (strlen(sentence) == 0) {
       WARNING_LOG("Input sentence is empty");
       ErrorResponse(conn, kEmptyStringError);
+      delete[] sentence;
       return 0;
     }
 
     if (!isclear(strSentence)) {
       WARNING_LOG("Failed string validation check");
       ErrorResponse(conn, kEncodingError);
+      delete[] sentence;
       return 0;
     }
 
@@ -532,6 +534,7 @@ static int Service(struct mg_connection *conn) {
     if(str_xml == "y") {
       if (-1 == xml4nlp.LoadXMLFromString(strSentence)) {
         ErrorResponse(conn, kXmlParseError);
+        delete[] sentence;
         return 0;
       }
       // move sentence validation check into each module
@@ -543,24 +546,28 @@ static int Service(struct mg_connection *conn) {
       int ret = engine->wordseg(xml4nlp);
       if (0 != ret) {
         ErrorResponse(conn, static_cast<ErrorCodes>(ret));
+        delete[] sentence;
         return 0;
       }
     } else if (str_type == LTP_SERVICE_NAME_POSTAG){
       int ret = engine->postag(xml4nlp);
       if (0 != ret) {
         ErrorResponse(conn, static_cast<ErrorCodes>(ret));
+        delete[] sentence;
         return 0;
       }
     } else if (str_type == LTP_SERVICE_NAME_NER) {
       int ret = engine->ner(xml4nlp);
       if (0 != ret) {
         ErrorResponse(conn, static_cast<ErrorCodes>(ret));
+        delete[] sentence;
         return 0;
       }
     } else if (str_type == LTP_SERVICE_NAME_DEPPARSE){
       int ret = engine->parser(xml4nlp);
       if (0 != ret) {
         ErrorResponse(conn, static_cast<ErrorCodes>(ret));
+        delete[] sentence;
         return 0;
       }
     } else if (str_type == LTP_SERVICE_NAME_SEMDEPPARSE){
@@ -575,12 +582,14 @@ static int Service(struct mg_connection *conn) {
       ret = engine->lstm_semantic_parser(xml4nlp); //lstm semantic parser
       if (0 != ret) {
         ErrorResponse(conn, static_cast<ErrorCodes>(ret));
+        delete[] sentence;
         return 0;
       }
     } else if (str_type == LTP_SERVICE_NAME_SRL){ // srl
       int ret = engine->srl(xml4nlp);
       if (0 != ret) {
         ErrorResponse(conn, static_cast<ErrorCodes>(ret));
+        delete[] sentence;
         return 0;
       }
     } else {   // all
@@ -588,6 +597,7 @@ static int Service(struct mg_connection *conn) {
       int ret = engine->srl(xml4nlp); //srl
       if (0 != ret) {
         ErrorResponse(conn, static_cast<ErrorCodes>(ret));
+        delete[] sentence;
         return 0;
       }
 
@@ -619,6 +629,7 @@ static int Service(struct mg_connection *conn) {
     mg_printf(conn, "%s", strResult.c_str());
 
     xml4nlp.ClearDOM();
+    delete[] sentence;
   }
   return 1;
 }
